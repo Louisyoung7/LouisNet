@@ -3,15 +3,25 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/epoll.h>  // for epoll APIs
+#include <fcntl.h>  // for fcntl, O_NONBLOCK
 
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <string>
 using std::cout;
 using std::endl;
+using std::string;
 
 constexpr int PORT = 10000;
-constexpr int MAX_EVENTS = 1024;    // epoll_wait最多能返回的事件数
+constexpr int MAX_EVENTS = 1024;  // epoll_wait最多能返回的事件数
+
+// 设置fd为非阻塞
+void setNonBlocking(int fd) {
+    int old_flag = fcntl(fd, F_GETFL);
+    int new_flag = old_flag | O_NONBLOCK;
+    fcntl(fd,F_SETFL,new_flag);
+}
 
 int main() {
     // 1.创建监听的套接字
@@ -93,10 +103,13 @@ int main() {
                     continue;
                 }
 
+                // 将获得的cfd设置为非阻塞
+                setNonBlocking(cfd);
+
                 cout << "New client connected: fd=" << cfd << endl;
 
-                // 将cfd也注册到epoll中，并关注可读事件
-                ev.events = EPOLLIN;
+                // 将cfd也注册到epoll中，并设置为ET模式
+                ev.events = EPOLLIN | EPOLLET;
                 ev.data.fd = cfd;
                 if (epoll_ctl(epfd, EPOLL_CTL_ADD, cfd, &ev) == -1) {
                     perror("epoll_ctl: cfd add failed");
@@ -104,23 +117,36 @@ int main() {
                 }
             } else {
                 // 情况2，通信套接字就绪，说明收到了信息
+                string buffer;  // 临时存储接收的数据
                 char buf[1024];
-                int n = read(fd, buf, sizeof(buf) - 1); // 如果buf占满了，留一个字节来装'\0'
 
-                // 客户端断开连接或者出错
-                if (n <= 0) {
-                    if (n == 0) {
-                        cout << "Client fd=" << fd << " disconnected" << endl;
-                    } else {
-                        perror("read error");
+                while (true) {
+                    ssize_t n = read(fd, buf, sizeof(buf));
+                    if (n > 0) {
+                        // 读取到n字节数据
+                        buffer.append(buf,n);
                     }
-                    // 不管是断开连接或者出错，都要关闭fd并从epoll中删除
-                    close(fd);
-                    epoll_ctl(epfd,EPOLL_CTL_DEL,fd,nullptr);   // 删除和添加不同，不需要知道绑定了什么事件，因此event传nullptr
-                } else {
-                    buf[n] = '\0';
-                    cout << "Recv from fd=" << fd << ": " << buf << endl;
-                    write(fd,buf,n);
+                    else if (n == 0) {
+                        // 客户端断开连接
+                        cout << "Client fd=" << fd << " disconnected." << endl;
+                        close(fd);
+                        epoll_ctl(epfd, EPOLL_CTL_DEL, fd, nullptr);
+                        break;
+                    } else {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                            // 数据读完了
+                            // 数据读完之后，内核会自动将fd转换为非就绪态
+                            cout << "Read complete from fd=" << fd << ", echoing..." << endl;
+                            write(fd, buffer.c_str(), buffer.size());
+                            break;
+                        } else {
+                            // 读取出错
+                            perror("read error");
+                            close(fd);
+                            epoll_ctl(epfd, EPOLL_CTL_DEL, fd, nullptr);
+                            break;
+                        }
+                    }
                 }
             }
         }
