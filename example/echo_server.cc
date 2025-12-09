@@ -74,12 +74,15 @@ int main() {
         return -1;
     }
 
+    // 设置监听套接字为非阻塞
+    setNonBlocking(lfd);
+
     // 5.准备事件结构体
     struct epoll_event ev;  // 用于将需要监听的套接字注册到epoll中
     struct epoll_event events[MAX_EVENTS];  // 存储epoll_wait得到的就绪的套接字
 
     // 6.将监听套接字lfd注册到epoll中，关注EPOLLIN（可读）事件
-    ev.events = EPOLLIN;    // 关注可读事件
+    ev.events = EPOLLIN | EPOLLET;    // 关注可读事件，并设置为ET模式
     ev.data.fd = lfd;       // 将lfd绑定到这个事件
     // 将lfd以及要监听lfd的什么事件等信息注册到epoll中
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, lfd, &ev) == -1) {
@@ -105,24 +108,33 @@ int main() {
 
             // 情况1，监听套接字就绪，说明有客户端的连接请求
             if (fd == lfd) {
-                // 这里不关心客户端的地址信息，单纯想建立连接，因此addr和addr_len都传nullptr
-                int cfd = accept(lfd, nullptr, nullptr);
-                if (cfd == -1) {
-                    perror("accept failed");
-                    continue;
-                }
+                while (true) {
+                    // 这里不关心客户端的地址信息，单纯想建立连接，因此addr和addr_len都传nullptr
+                    int cfd = accept(lfd, nullptr, nullptr);
+                    if (cfd == -1) {
+                        // 将所有的cfd都注册到了epoll
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                            cout << "Accept complete" << endl;
+                            break;
+                        } else {
+                            // accept 出错
+                            perror("accept failed");
+                            break;
+                        }
+                    } else {
+                        // 将获得的cfd设置为非阻塞
+                        setNonBlocking(cfd);
 
-                // 将获得的cfd设置为非阻塞
-                setNonBlocking(cfd);
+                        cout << "New client connected: fd=" << cfd << endl;
 
-                cout << "New client connected: fd=" << cfd << endl;
-
-                // 将cfd也注册到epoll中，并设置为ET模式
-                ev.events = EPOLLIN | EPOLLET;
-                ev.data.fd = cfd;
-                if (epoll_ctl(epfd, EPOLL_CTL_ADD, cfd, &ev) == -1) {
-                    perror("epoll_ctl: cfd add failed");
-                    close(cfd);
+                        // 将cfd也注册到epoll中，并设置为ET模式
+                        ev.events = EPOLLIN | EPOLLET;
+                        ev.data.fd = cfd;
+                        if (epoll_ctl(epfd, EPOLL_CTL_ADD, cfd, &ev) == -1) {
+                            perror("epoll_ctl: cfd add failed");
+                            close(cfd);
+                        }
+                    }
                 }
             } else {
                 // 情况2，通信套接字就绪，说明收到了信息
