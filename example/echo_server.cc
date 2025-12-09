@@ -1,9 +1,11 @@
 // echo_server.cc
 
 #include <arpa/inet.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <sys/epoll.h>  // for epoll APIs
-#include <fcntl.h>  // for fcntl, O_NONBLOCK
+#include <fcntl.h>      // for fcntl, O_NONBLOCK
+#include <signal.h> // for signal
 
 #include <cstdio>
 #include <cstring>
@@ -12,6 +14,7 @@
 using std::cout;
 using std::endl;
 using std::string;
+using std::to_string;
 
 constexpr int PORT = 10000;
 constexpr int MAX_EVENTS = 1024;  // epoll_wait最多能返回的事件数
@@ -24,6 +27,12 @@ void setNonBlocking(int fd) {
 }
 
 int main() {
+    // 忽略SIGPIPE信号，防止因为向已经关闭的连接写数据导致程序崩溃
+    if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+        perror("signal(SIGPIPE,SIG_IGN) failed");
+        return -1;
+    }
+
     // 1.创建监听的套接字
     int lfd = socket(AF_INET, SOCK_STREAM, 0);
     if (lfd == -1) {
@@ -124,7 +133,8 @@ int main() {
                     ssize_t n = read(fd, buf, sizeof(buf));
                     if (n > 0) {
                         // 读取到n字节数据
-                        buffer.append(buf,n);
+                        buffer.append(buf, n);
+                        cout << "Successfully read " << n << " bytes from fd=" << fd << endl;
                     }
                     else if (n == 0) {
                         // 客户端断开连接
@@ -137,8 +147,26 @@ int main() {
                             // 数据读完了
                             // 数据读完之后，内核会自动将fd转换为非就绪态
                             cout << "Read complete from fd=" << fd << ", echoing..." << endl;
-                            write(fd, buffer.c_str(), buffer.size());
-                            break;
+                            ssize_t n_written = write(fd, buffer.c_str(), buffer.size());
+
+                            if (n_written == -1) {
+                                // write失败
+                                if (errno == EPIPE) {
+                                    // 写入的连接已关闭
+                                    perror(("Write to fd=" + to_string(fd) + " failed: Broken pipe (EPIPE). Client disconnected.").c_str());
+                                } else {
+                                    // 其他写入错误
+                                    perror(("Write error on fd=" + to_string(fd)).c_str());
+                                }
+                                // 无论哪种错误，都要清理资源
+                                close(fd);
+                                epoll_ctl(epfd, EPOLL_CTL_DEL, fd, nullptr);
+                                break;
+                            } else {
+                                // write成功
+                                cout << "Successfully wrote " << n_written << " bytes to fd=" << fd << endl;
+                                break;
+                            }
                         } else {
                             // 读取出错
                             perror("read error");
