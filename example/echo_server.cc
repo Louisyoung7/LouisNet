@@ -11,12 +11,14 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <vector>
 using std::cout;
 using std::endl;
 using std::string;
 using std::to_string;
+using std::vector;
 
-constexpr int PORT = 10000;
+constexpr int PORT = 8080;
 constexpr int MAX_EVENTS = 1024;  // epoll_wait最多能返回的事件数
 
 // 设置fd为非阻塞
@@ -58,7 +60,8 @@ int main() {
     }
 
     // 3.设置监听
-    if (listen(lfd, 128) == -1) {
+    // SOMAXCONN是一个系统默认值
+    if (listen(lfd, SOMAXCONN) == -1) {
         perror("listen failed");
         close(lfd);
         return -1;
@@ -79,7 +82,7 @@ int main() {
 
     // 5.准备事件结构体
     struct epoll_event ev;  // 用于将需要监听的套接字注册到epoll中
-    struct epoll_event events[MAX_EVENTS];  // 存储epoll_wait得到的就绪的套接字
+    vector<struct epoll_event> events(MAX_EVENTS);  // 存储epoll_wait得到的就绪的套接字
 
     // 6.将监听套接字lfd注册到epoll中，关注EPOLLIN（可读）事件
     ev.events = EPOLLIN | EPOLLET;    // 关注可读事件，并设置为ET模式
@@ -96,7 +99,7 @@ int main() {
     while (true) {
         // 7.不断等待事件发生
         // epoll_wait返回当前已经就绪的fd的个数，并且会填充events数组，timeout=-1表示一直阻塞等待
-        int nfds = epoll_wait(epfd, events, MAX_EVENTS, -1);
+        int nfds = epoll_wait(epfd, &events[0], MAX_EVENTS, -1);
         if (nfds == -1) {
             perror("epoll_wait failed");
             break;  // epoll_wait系统调用失败，一般此时出现了较严重错误，直接break；如果用continue，可能会一直失败
@@ -104,7 +107,7 @@ int main() {
 
         // 8.遍历所有就绪事件
         for (int i = 0; i < nfds; ++i) {
-            int fd = events->data.fd;
+            int fd = events[i].data.fd;
 
             // 情况1，监听套接字就绪，说明有客户端的连接请求
             if (fd == lfd) {
@@ -187,10 +190,10 @@ int main() {
                             break;
                         }
                     }
-                }
+                }   // 结束处理客户端数据
             }
-        }
-    }
+        }   // 结束遍历返回的事件
+    }   // 结束主事件循环
 
     close(lfd);
     close(epfd);
