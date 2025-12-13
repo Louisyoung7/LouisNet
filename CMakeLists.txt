@@ -9,5 +9,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -O2)
 endif()
 
-add_executable(echo_server example/echo_server.cc)
-add_executable(echo_client example/echo_client.cc)
+add_executable(epoll_test tests/epoll_test.cc)
+
+# 指定目录不是文件
+target_include_directories(epoll_test PRIVATE ${CMAKE_SOURCE_DIR}/src)
