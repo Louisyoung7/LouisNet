@@ -1,5 +1,5 @@
 # .clang-format
-BasedOnStyle: Google  # 以 Google 风格为基础（也可选 LLVM、Chromium 等）
+BasedOnStyle: Google  # 以 Google 风格为基础（
 IndentWidth: 4
 UseTab: Never
 
@@ -9,12 +9,7 @@ BreakBeforeBraces: Attach  # 函数、类、控制结构的大括号不换行，
 # 不允许单独函数体
 AllowShortFunctionsOnASingleLine: false
 
-# 命名空间尾部自动加注释（如 }  // namespace myns）
-NamespaceIndentation: None  # 命名空间内部不额外缩进（可选）
-CommentPragmas: '^ IWYU pragma:'  # 保留 IWYU 等注释（可选）
-
 # 启用命名空间结束注释
-NamespaceMacros: []  # 如果你有自定义命名空间宏，可在此列出
 FixNamespaceComments: true  # 自动在命名空间结束处添加 // namespace xxx 注释
 
 # 设置代码的列限制，即一行代码建议不超过 120 个字符，超过后会触发自动换行等格式化行为
