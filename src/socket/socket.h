@@ -9,7 +9,20 @@ class TcpSocket {
     int sockFd_;
 
    protected:
+    /*
+     * @brief 对bind的封装，增加了错误日志
+     * @param ip 要指定的IP地址
+     * @param port 要指定的端口号
+     * return true bind成功
+     * return false bind失败，打印日志
+     */
     bool bind(const string& ip, int port);
+
+    /*
+     * @brief 对listen的封装
+     * @return true listen成功
+     * @return false listen失败，打印日志
+     */
     bool listen();
     void accept();
     void connect();

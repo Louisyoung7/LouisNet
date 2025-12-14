@@ -42,7 +42,7 @@ bool TcpSocket::bind(const string& ip, int port) {
         cerr << "Invalid socket." << endl;
         return false;
     }
-    
+
     // 设置服务器地址信息
     struct sockaddr_in sockAddr{};
     sockAddr.sin_family = AF_INET;  ///< 地址族
@@ -67,9 +67,20 @@ bool TcpSocket::bind(const string& ip, int port) {
 
     return true;
 }
+
 bool TcpSocket::listen() {
-    // TODO
+    if (sockFd_ < 0) {
+        cerr << "Invalid socket." << endl;
+        return false;
+    }
+
+    if (::listen(sockFd_, SOMAXCONN) == -1) {
+        return false;
+    }
+
+    return true;
 }
+
 void TcpSocket::accept() {
     // TODO
 }
