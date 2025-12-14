@@ -1,12 +1,15 @@
 #pragma once
 
+#include <string>
+using std::string;
+
 namespace net {
 class TcpSocket {
    protected:
     int sockFd_;
 
    protected:
-    bool bind();
+    bool bind(const string& ip, int port);
     bool listen();
     void accept();
     void connect();
@@ -20,7 +23,7 @@ class TcpSocket {
      * @return true 开启成功
      * @return false 开启失败，打印日志
      */
-    bool start();
+    bool start(const string& ip, int port);
     virtual ~TcpSocket();
     virtual void send();
     virtual void recv();
