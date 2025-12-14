@@ -4,9 +4,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <iostream>
-#include <cstring>
 #include <cerrno>
+#include <cstring>
+#include <iostream>
 using std::cerr;
 using std::endl;
 
@@ -16,20 +16,20 @@ bool TcpSocket::start(const string& ip, int port) {
     // 创建套接字
     sockFd_ = ::socket(AF_INET, SOCK_STREAM, 0);
     if (sockFd_ == -1) {
-        cerr << "socket failed: " << ::strerror(errno) << endl;
+        cerr << "socket failed: " << ::strerror(lastError) << endl;
         return false;
     }
 
     // 绑定端口
-    if (!bind(ip,port)) {
-        cerr << "bind failed: " << ::strerror(errno) << endl;
+    if (!bind(ip, port)) {
+        cerr << "bind failed: " << ::strerror(lastError) << endl;
         ::close(sockFd_);
         return false;
     }
 
     // 设置监听
     if (!listen()) {
-        cerr << "listen failed: " << ::strerror(errno) << endl;
+        cerr << "listen failed: " << ::strerror(lastError) << endl;
         ::close(sockFd_);
         return false;
     }
@@ -44,7 +44,7 @@ bool TcpSocket::bind(const string& ip, int port) {
     }
 
     // 设置服务器地址信息
-    struct sockaddr_in sockAddr{};
+    struct sockaddr_in sockAddr {};
     sockAddr.sin_family = AF_INET;  ///< 地址族
 
     // 指定ip，错误判断
@@ -52,16 +52,18 @@ bool TcpSocket::bind(const string& ip, int port) {
     if (ptonRet != 1) {
         if (ptonRet == 0) {
             cerr << "Invalid IP address." << endl;
-        }
-        else if (ptonRet == -1) {
+            lastError = errno;
+        } else if (ptonRet == -1) {
             cerr << "inet_pton call failed" << endl;
+            lastError = errno;
         }
         return false;
     }
 
     sockAddr.sin_port = htons(port);  ///< 端口，注意字节序转换
-    
+
     if (::bind(sockFd_, reinterpret_cast<struct sockaddr*>(&sockAddr), sizeof(sockAddr)) == -1) {
+        lastError = errno;
         return false;
     }
 
@@ -75,6 +77,7 @@ bool TcpSocket::listen() {
     }
 
     if (::listen(sockFd_, SOMAXCONN) == -1) {
+        lastError = errno;
         return false;
     }
 
@@ -86,5 +89,9 @@ void TcpSocket::accept() {
 }
 void TcpSocket::connect() {
     // TODO
+}
+
+int TcpSocket::getErrno() const {
+    return lastError;
 }
 }  // namespace net

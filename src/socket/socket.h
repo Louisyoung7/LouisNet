@@ -7,6 +7,7 @@ namespace net {
 class TcpSocket {
    protected:
     int sockFd_;
+    int lastError;  ///< 存储最新的errno
 
    protected:
     /*
@@ -26,6 +27,12 @@ class TcpSocket {
     bool listen();
     void accept();
     void connect();
+
+    /*
+     * @brief 获取最新的errno
+     * return 最新的errno
+     */
+    int getErrno() const;
 
    public:
     TcpSocket() : sockFd_(-1){};
