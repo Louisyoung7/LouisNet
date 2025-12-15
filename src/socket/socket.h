@@ -30,7 +30,9 @@ class TcpSocket {
      * @return 返回通信套接字，如果出错返回-1
      */
     int accept();
-    void connect();
+
+
+    bool connect(const std::string& ip, int port);
 
     /**
      * @brief 获取最新的errno

@@ -1,6 +1,7 @@
 #include "socket/socket.h"
 
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -95,8 +96,29 @@ int TcpSocket::accept() {
 
     return connFd;
 }
-void TcpSocket::connect() {
-    // TODO
+bool TcpSocket::connect(const string& ip, int port) {
+    if (!sockFdIsValid()) {
+        return false;  
+    }
+
+    struct sockaddr_in commAddr{};
+    commAddr.sin_family = AF_INET;
+    int ptonRet = ::inet_pton(AF_INET, ip.c_str(), &commAddr.sin_addr.s_addr);
+    if (ptonRet != 1) {
+        if (ptonRet == 0) {
+            cerr << "Invalid IP address." << endl;
+        } else if (ptonRet == -1) {
+            cerr << "inet_pton call failed" << endl;
+            lastError = errno;
+        }
+        return false;
+    }
+    commAddr.sin_port = htons(port);
+
+    if (::connect(sockFd_, reinterpret_cast<struct sockaddr*>(&commAddr), sizeof(commAddr)) == -1) {
+        lastError = errno;
+        return false;
+    }
 }
 
 int TcpSocket::getErrno() const {
