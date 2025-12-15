@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <cerrno>
@@ -91,6 +92,7 @@ int TcpSocket::accept() {
     }
     int connFd = ::accept(sockFd_, nullptr, nullptr);
     if (connFd < 0) {
+        lastError = errno;
         return -1;
     }
 
@@ -119,6 +121,8 @@ bool TcpSocket::connect(const string& ip, int port) {
         lastError = errno;
         return false;
     }
+
+    return true;
 }
 
 int TcpSocket::getErrno() const {
@@ -132,5 +136,29 @@ bool TcpSocket::sockFdIsValid() const {
     }
 
     return true;
+}
+
+TcpSocket::~TcpSocket() {
+    if (sockFd_ > 0) {
+        ::close(sockFd_);
+    }
+}
+
+int TcpSocket::send(const void* data, int length) {
+    ssize_t sentSize = ::send(commFd_, data, length, 0);
+    if (sentSize == -1) {
+        // 写入的连接关闭
+        if (errno == EPIPE) {
+            cerr << "send falied: client disconnected.";
+            return -1;
+        }
+        // 其他写入错误
+        else {
+            cerr << "send failed: send syscall error.";
+        }
+    }
+    return sentSize;
+}
+int TcpSocket::recv(void* buffer, int length) {
 }
 }  // namespace net
