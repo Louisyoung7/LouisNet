@@ -16,31 +16,6 @@ using std::string;
 
 namespace net {
 
-bool TcpSocket::start(const string& ip, int port) {
-    // 创建套接字
-    sockFd_ = ::socket(AF_INET, SOCK_STREAM, 0);
-    if (sockFd_ == -1) {
-        cerr << "socket failed: " << ::strerror(lastError) << endl;
-        return false;
-    }
-
-    // 绑定端口
-    if (!bind(ip, port)) {
-        cerr << "bind failed: " << ::strerror(lastError) << endl;
-        ::close(sockFd_);
-        return false;
-    }
-
-    // 设置监听
-    if (!listen()) {
-        cerr << "listen failed: " << ::strerror(lastError) << endl;
-        ::close(sockFd_);
-        return false;
-    }
-
-    return true;
-}
-
 bool TcpSocket::bind(const string& ip, int port) {
     if (!sockFdIsValid()) {
         return false;
@@ -54,10 +29,10 @@ bool TcpSocket::bind(const string& ip, int port) {
     int ptonRet = ::inet_pton(AF_INET, ip.c_str(), &sockAddr.sin_addr.s_addr);
     if (ptonRet != 1) {
         if (ptonRet == 0) {
-            cerr << "Invalid IP address." << endl;
+            cerr << "bind failed: invalid IP address." << endl;
             lastError = errno;
         } else if (ptonRet == -1) {
-            cerr << "inet_pton call failed" << endl;
+            cerr << "bind failed: inet_pton call error." << endl;
             lastError = errno;
         }
         return false;
@@ -66,6 +41,7 @@ bool TcpSocket::bind(const string& ip, int port) {
     sockAddr.sin_port = htons(port);  ///< 端口，注意字节序转换
 
     if (::bind(sockFd_, reinterpret_cast<struct sockaddr*>(&sockAddr), sizeof(sockAddr)) == -1) {
+        cerr << "bind failed: bind syscall error." << endl;
         lastError = errno;
         return false;
     }
@@ -79,6 +55,7 @@ bool TcpSocket::listen() {
     }
 
     if (::listen(sockFd_, SOMAXCONN) == -1) {
+        cerr << "listen failed: listen syscall error." << endl;
         lastError = errno;
         return false;
     }
@@ -92,12 +69,14 @@ int TcpSocket::accept() {
     }
     int connFd = ::accept(sockFd_, nullptr, nullptr);
     if (connFd < 0) {
+        cerr << "accept failed: accept syscall error." << endl;
         lastError = errno;
         return -1;
     }
 
     return connFd;
 }
+
 bool TcpSocket::connect(const string& ip, int port) {
     if (!sockFdIsValid()) {
         return false;  
@@ -105,19 +84,24 @@ bool TcpSocket::connect(const string& ip, int port) {
 
     struct sockaddr_in commAddr{};
     commAddr.sin_family = AF_INET;
+
+    // 指定IP，错误判断
     int ptonRet = ::inet_pton(AF_INET, ip.c_str(), &commAddr.sin_addr.s_addr);
     if (ptonRet != 1) {
         if (ptonRet == 0) {
-            cerr << "Invalid IP address." << endl;
+            cerr << "connect faield: invalid IP address." << endl;
+            lastError = errno;
         } else if (ptonRet == -1) {
-            cerr << "inet_pton call failed" << endl;
+            cerr << "connect failed: inet_pton call error." << endl;
             lastError = errno;
         }
         return false;
     }
-    commAddr.sin_port = htons(port);
+
+    commAddr.sin_port = htons(port);    ///< 指定端口号，注意字节序转换
 
     if (::connect(sockFd_, reinterpret_cast<struct sockaddr*>(&commAddr), sizeof(commAddr)) == -1) {
+        cerr << "connect failed: connect syscall error." << endl;
         lastError = errno;
         return false;
     }
@@ -131,7 +115,7 @@ int TcpSocket::getErrno() const {
 
 bool TcpSocket::sockFdIsValid() const {
     if (sockFd_ < 0) {
-        cerr << "Invalid socket." << endl;
+        cerr << "Socket fd invalid." << endl;
         return false;
     }
 

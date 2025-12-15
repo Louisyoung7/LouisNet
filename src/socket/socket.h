@@ -58,14 +58,6 @@ class TcpSocket {
     TcpSocket() : sockFd_(-1), commFd_(-1), lastError(0){};
 
     /**
-     * @brief 开启服务器
-     * 底层会调用socket，bind，listen函数
-     * @return true 开启成功
-     * @return false 开启失败，更新错误号
-     */
-    bool start(const std::string& ip, int port);
-
-    /**
      * @brief 虚析构函数，close套接字，释放资源
      */
     virtual ~TcpSocket();
