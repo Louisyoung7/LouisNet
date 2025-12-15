@@ -7,8 +7,10 @@
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <string>
 using std::cerr;
 using std::endl;
+using std::string;
 
 namespace net {
 
@@ -38,8 +40,7 @@ bool TcpSocket::start(const string& ip, int port) {
 }
 
 bool TcpSocket::bind(const string& ip, int port) {
-    if (sockFd_ < 0) {
-        cerr << "Invalid socket." << endl;
+    if (!sockFdIsValid()) {
         return false;
     }
 
@@ -71,8 +72,7 @@ bool TcpSocket::bind(const string& ip, int port) {
 }
 
 bool TcpSocket::listen() {
-    if (sockFd_ < 0) {
-        cerr << "Invalid socket." << endl;
+    if (!sockFdIsValid()) {
         return false;
     }
 
@@ -84,8 +84,16 @@ bool TcpSocket::listen() {
     return true;
 }
 
-void TcpSocket::accept() {
-    // TODO
+int TcpSocket::accept() {
+    if (!sockFdIsValid()) {
+        return -1;  ///< 表示accept失败
+    }
+    int connFd = ::accept(sockFd_, nullptr, nullptr);
+    if (connFd < 0) {
+        return -1;
+    }
+
+    return connFd;
 }
 void TcpSocket::connect() {
     // TODO
@@ -93,5 +101,14 @@ void TcpSocket::connect() {
 
 int TcpSocket::getErrno() const {
     return lastError;
+}
+
+bool TcpSocket::sockFdIsValid() const {
+    if (sockFd_ < 0) {
+        cerr << "Invalid socket." << endl;
+        return false;
+    }
+
+    return true;
 }
 }  // namespace net
