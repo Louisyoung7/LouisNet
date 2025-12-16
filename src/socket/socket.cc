@@ -129,20 +129,20 @@ TcpSocket::~TcpSocket() {
 }
 
 int TcpSocket::send(const void* data, int length) {
-    ssize_t sentSize = ::send(commFd_, data, length, 0);
+    ssize_t sentSize = ::send(sockFd_, data, length, 0);
     if (sentSize == -1) {
-        // 写入的连接关闭
-        if (errno == EPIPE) {
-            cerr << "send falied: client disconnected.";
-            return -1;
-        }
-        // 其他写入错误
-        else {
-            cerr << "send failed: send syscall error.";
-        }
+        lastError = errno;
+        return -1;
     }
+
     return sentSize;
 }
 int TcpSocket::recv(void* buffer, int length) {
+    ssize_t recvSize = ::recv(sockFd_, buffer, length, 0);
+    if (recvSize == -1) {
+        lastError = errno;
+        return -1;
+    }
+    return -1;
 }
 }  // namespace net

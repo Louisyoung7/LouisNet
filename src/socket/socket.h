@@ -6,7 +6,6 @@ namespace net {
 class TcpSocket {
    protected:
     int sockFd_;
-    int commFd_;
     int lastError;  ///< 存储最新的errno
 
    protected:
@@ -15,20 +14,20 @@ class TcpSocket {
      * @param ip 要指定的IP地址
      * @param port 要指定的端口号
      * @return true bind成功
-     * @return false bind失败，更新错误号
+     * @return false bind失败，更新错误号，打印日志
      */
     bool bind(const std::string& ip, int port);
 
     /**
      * @brief 对listen的封装
      * @return true listen成功
-     * @return false listen失败，更新错误号
+     * @return false listen失败，更新错误号，打印日志
      */
     bool listen();
 
     /**
      * @brief 对accept的封装
-     * @return 返回通信套接字，如果出错返回-1，更新错误号
+     * @return 返回通信套接字，如果出错返回-1，更新错误号，打印日志
      */
     int accept();
 
@@ -37,7 +36,7 @@ class TcpSocket {
      * @param ip 要指定的IP
      * @param port 要指定的端口号
      * @return true connect成功
-     * @return false connect失败，更新错误号
+     * @return false connect失败，更新错误号，打印日志
      */
     bool connect(const std::string& ip, int port);
 
@@ -50,12 +49,20 @@ class TcpSocket {
     /**
      * @brief 判断底层套接字是否没有问题
      * @return true 没问题
-     * @return false 有问题，更新错误号
+     * @return false 有问题，更新错误号，打印日志
      */
     bool sockFdIsValid() const;
 
    public:
-    TcpSocket() : sockFd_(-1), commFd_(-1), lastError(0){};
+    /**
+     * @brief 普通构造函数，只初始化成员变量，多用于服务器端
+     */
+    TcpSocket() : sockFd_(-1), lastError(0){};
+
+    /**
+     * @brief 全能构造函数
+     */
+    TcpSocket(int sockFd) : sockFd_(sockFd), lastError(0){};
 
     /**
      * @brief 虚析构函数，close套接字，释放资源
