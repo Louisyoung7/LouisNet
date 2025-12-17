@@ -1,5 +1,7 @@
 #include <socket/connector.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <string>
 #include <cstring>
 #include <cerrno>
@@ -32,5 +34,23 @@ bool Connector::connectTo(const std::string& ip, int port) {
     }
 
     return true;
+}
+
+int Connector::send(const void* data, int length) {
+    ssize_t sendSize = ::send(sockFd_, data, length, 0);
+
+    if (sendSize == -1) {
+        errNo = errno;
+    }
+    return sendSize;
+}
+
+int Connector::recv(void* buffer, int length) {
+    ssize_t recvSize = ::recv(sockFd_, buffer, length, 0);
+
+    if (recvSize == -1) {
+        errNo = errno;
+    }
+    return recvSize;
 }
 }

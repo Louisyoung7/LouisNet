@@ -80,10 +80,10 @@ int main() {
 
         // 遍历所有就绪事件
         for (int i = 0; i < nfds; ++i) {
-            int epoll_fd = events[i].data.fd;
+            int new_fd = events[i].data.fd;
 
             // 情况1，监听套接字就绪，说明有客户端的连接请求
-            if (epoll_fd == lfd) {
+            if (new_fd == lfd) {
                 while (true) {
                     // 这里不关心客户端的地址信息，单纯想建立连接，因此addr和addr_len都传nullptr
                     int cfd = accept(lfd, nullptr, nullptr);
@@ -115,49 +115,49 @@ int main() {
                 char buf[1024];
 
                 while (true) {
-                    ssize_t n = read(epoll_fd, buf, sizeof(buf));
+                    ssize_t n = read(new_fd, buf, sizeof(buf));
                     if (n > 0) {
                         // 读取到n字节数据
                         buffer.append(buf, n);
-                        cout << "Successfully read " << n << " bytes from fd=" << epoll_fd << endl;
+                        cout << "Successfully read " << n << " bytes from fd=" << new_fd << endl;
                     } else if (n == 0) {
                         // 客户端断开连接
-                        cout << "Client fd=" << epoll_fd << " disconnected." << endl;
-                        epoll.delFd(epoll_fd);
-                        close(epoll_fd);
+                        cout << "Client fd=" << new_fd << " disconnected." << endl;
+                        epoll.delFd(new_fd);
+                        close(new_fd);
                         break;
                     } else {
                         if (errno == EAGAIN || errno == EWOULDBLOCK) {
                             // 数据读完了
                             // 数据读完之后，内核会自动将fd转换为非就绪态
-                            cout << "Read complete from fd=" << epoll_fd << ", echoing..." << endl;
-                            ssize_t n_written = write(epoll_fd, buffer.c_str(), buffer.size());
+                            cout << "Read complete from fd=" << new_fd << ", echoing..." << endl;
+                            ssize_t n_written = write(new_fd, buffer.c_str(), buffer.size());
 
                             if (n_written == -1) {
                                 // write失败
                                 if (errno == EPIPE) {
                                     // 写入的连接已关闭
-                                    perror(("Write to fd=" + to_string(epoll_fd) +
+                                    perror(("Write to fd=" + to_string(new_fd) +
                                             " failed: Broken pipe (EPIPE). Client disconnected.")
                                                .c_str());
                                 } else {
                                     // 其他写入错误
-                                    perror(("Write error on fd=" + to_string(epoll_fd)).c_str());
+                                    perror(("Write error on fd=" + to_string(new_fd)).c_str());
                                 }
                                 // 无论哪种错误，都要清理资源
-                                epoll.delFd(epoll_fd);
-                                close(epoll_fd);
+                                epoll.delFd(new_fd);
+                                close(new_fd);
                                 break;
                             } else {
                                 // write成功
-                                cout << "Successfully wrote " << n_written << " bytes to fd=" << epoll_fd << endl;
+                                cout << "Successfully wrote " << n_written << " bytes to fd=" << new_fd << endl;
                                 break;
                             }
                         } else {
                             // 读取出错
                             perror("read error");
-                            epoll.delFd(epoll_fd);
-                            close(epoll_fd);
+                            epoll.delFd(new_fd);
+                            close(new_fd);
                             break;
                         }
                     }
