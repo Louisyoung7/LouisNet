@@ -2,6 +2,10 @@
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <cstring>
+#include <cerrno>
+#include <string>
+using std::string;
 
 namespace net {
 bool Listener::bindAndListen(const std::string ip, int port, int backLog) {
@@ -19,20 +23,20 @@ bool Listener::bindAndListen(const std::string ip, int port, int backLog) {
     int ptonRet = ::inet_pton(AF_INET, ip.c_str(), &sockAddr.sin_addr.s_addr);
     if (ptonRet != 1) {
         if (ptonRet == 0) {
-            setError("bind failed: invalid IP address.");
+            setError("bind failed: invalid IP address. " + string(::strerror(errno)));
         } else if (ptonRet == -1) {
-            setError("bind failed: inet_pton call error.");
+            setError("bind failed: inet_pton call error. " + string(::strerror(errno)));
         }
         return false;
     }
 
     if (::bind(sockFd_, reinterpret_cast<struct sockaddr*>(&sockAddr), sizeof(sockAddr)) == -1) {
-        setError("bind failed: bind syscall error.");
+        setError("bind failed: bind syscall error. " + string(::strerror(errno)));
         return false;
     }
 
     if (::listen(sockFd_, backLog) == -1) {
-        setError("listen failed: listen syscall error.");
+        setError("listen failed: listen syscall error. " + string(::strerror(errno)));
         return false;
     }
 
@@ -45,7 +49,7 @@ int Listener::accept() {
     }
     int connFd = ::accept(sockFd_, nullptr, nullptr);
     if (connFd < 0) {
-        setError("accept failed: accept syscall error.");
+        setError("accept failed: accept syscall error. " + string(::strerror(errno)));
         return -1;
     }
 

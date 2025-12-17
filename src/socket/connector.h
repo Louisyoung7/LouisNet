@@ -5,6 +5,7 @@
 namespace net {
 class Connector : public TcpSocketBase {
    private:
+    int errNo;  ///< 存储errno
    public:
     Connector() : TcpSocketBase(){};
 

@@ -1,5 +1,9 @@
 #include <socket/connector.h>
 #include <arpa/inet.h>
+#include <string>
+#include <cstring>
+#include <cerrno>
+using std::string;
 
 namespace net {
 bool Connector::connectTo(const std::string& ip, int port) {
@@ -15,15 +19,15 @@ bool Connector::connectTo(const std::string& ip, int port) {
     int ptonRet = ::inet_pton(AF_INET, ip.c_str(), &commAddr.sin_addr.s_addr);
     if (ptonRet != 1) {
         if (ptonRet == 0) {
-            setError("connect faield: invalid IP address.");
+            setError("connect faield: invalid IP address. " + string(::strerror(errno)));
         } else if (ptonRet == -1) {
-            setError("connect failed: inet_pton call error.");
+            setError("connect failed: inet_pton call error. " + string(::strerror(errno)));
         }
         return false;
     }
 
     if (::connect(sockFd_, reinterpret_cast<struct sockaddr*>(&commAddr), sizeof(commAddr)) == -1) {
-        setError("connect failed: connect syscall error.");
+        setError("connect failed: connect syscall error. " + string(::strerror(errno)));
         return false;
     }
 
