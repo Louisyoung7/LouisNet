@@ -1,10 +1,7 @@
 #include "epoll.hpp"
-#include "utils.hpp"
 
 #include <arpa/inet.h>
-#include <fcntl.h>      // for fcntl, O_NONBLOCK
-#include <sys/epoll.h>  // for epoll APIs
-#include <sys/types.h>
+#include <socket/server.h>
 #include <unistd.h>
 
 #include <cstdio>
@@ -12,50 +9,26 @@
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include "utils.hpp"
 using std::cout;
 using std::endl;
 using std::string;
 using std::to_string;
 using std::vector;
 
-constexpr int PORT = 8080;
-
 int main() {
     // 忽略SIGPIPE信号，防止因为向已经关闭的连接写数据导致程序崩溃
     utils::sigIgnore();
 
-    // 创建监听的套接字
-    int lfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (lfd == -1) {
-        perror("socket failed");
-        return -1;
-    }
+    // 创建TcpServer实例
+    net::TcpServer server;
 
-    // 允许端口复用，避免出现端口正在被使用的报错
-    utils::setReuseAddr(lfd);
+    server.start();
 
-    // 绑定IP端口
-    // 设置服务器端的地址信息
-    struct sockaddr_in serverAddr {};
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = INADDR_ANY;
-    serverAddr.sin_port = htons(PORT);  // 注意转换大小端
-    // 绑定IP端口
-    if (bind(lfd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
-        perror("bind failed");
-        close(lfd);
-        return -1;
-    }
+    cout << "Server listening..." << endl;
 
-    // 设置监听
-    // SOMAXCONN是一个系统默认值
-    if (listen(lfd, SOMAXCONN) == -1) {
-        perror("listen failed");
-        close(lfd);
-        return -1;
-    }
-
-    cout << "Server listening on port " << PORT << endl;
+    int lfd = server.getListenFd();
 
     // 设置监听套接字为非阻塞
     utils::setNonBlocking(lfd);

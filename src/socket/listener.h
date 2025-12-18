@@ -2,7 +2,7 @@
 
 #include <socket/tcpSocketBase.h>
 #include <sys/socket.h>  // for SOMAXCONN
-
+#include <arpa/inet.h>
 #include <string>
 
 namespace net {
@@ -20,9 +20,11 @@ class Listener : public TcpSocketBase {
     /**
      * @brief 绑定端口，设置监听
      */
-    bool bindAndListen(const std::string ip, int port, int backLog = SOMAXCONN);
+    bool bindAndListen(const std::string ip, int port, int backLog);
 
     int accept();
+
+    int getSockFd() const override;
 };
 
 }  // namespace net

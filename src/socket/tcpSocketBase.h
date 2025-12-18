@@ -39,7 +39,7 @@ class TcpSocketBase {
     /**
      * @brief 获取服务器或客户端的套接字
      */
-    int getSockFd() const;
+    virtual int getSockFd() const;
 
     /**
      * @brief 获取最新的错误信息
