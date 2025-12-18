@@ -10,8 +10,18 @@ using std::string;
 using std::to_string;
 
 namespace net {
+bool Listener::create() {
+    sockFd_ = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (sockFd_ == -1) {
+        setError("socket failed: socket syscall error. " + string(::strerror(errno)));
+        return false;
+    }
+
+    return true;
+}
+
 bool Listener::bindAndListen(const std::string ip, int port, int backLog) {
-    if (fdIsValid()) {
+    if (!fdIsValid()) {
         setError("Invalid socket fd.");
         return false;
     }
@@ -54,6 +64,7 @@ bool Listener::bindAndListen(const std::string ip, int port, int backLog) {
 
 int Listener::accept() {
     if (!fdIsValid()) {
+        setError("Invalid socket fd.");
         return -1;  ///< 表示accept失败
     }
     int connFd = ::accept(sockFd_, nullptr, nullptr);
@@ -63,9 +74,5 @@ int Listener::accept() {
     }
 
     return connFd;
-}
-
-int Listener::getSockFd() const {
-    return sockFd_;
 }
 }  // namespace net

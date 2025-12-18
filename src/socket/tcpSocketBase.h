@@ -10,8 +10,6 @@ class TcpSocketBase {
    protected:
     /**
      * @brief 判断底层套接字是否没有问题
-     * @return true 没问题
-     * @return false 有问题，更新错误号，打印日志
      */
     bool fdIsValid() const;
 
@@ -37,9 +35,9 @@ class TcpSocketBase {
     virtual ~TcpSocketBase();
 
     /**
-     * @brief 获取服务器或客户端的套接字
+     * @brief 获取套接字
      */
-    virtual int getSockFd() const;
+    int getSockFd() const;
 
     /**
      * @brief 获取最新的错误信息

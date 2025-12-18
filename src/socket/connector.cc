@@ -10,6 +10,7 @@ using std::string;
 namespace net {
 bool Connector::connectTo(const std::string& ip, int port) {
     if (!fdIsValid()) {
+        setError("Invalid socket fd.");
         return false;
     }
 
@@ -52,5 +53,9 @@ int Connector::recv(void* buffer, int length) {
         errNo = errno;
     }
     return recvSize;
+}
+
+int Connector::getErrorNo() const {
+    return errNo;
 }
 }

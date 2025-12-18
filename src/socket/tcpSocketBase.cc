@@ -20,17 +20,17 @@ void TcpSocketBase::setError(const string& errorMessage) {
     errorMessage_ = errorMessage;
 }
 
-TcpSocketBase::~TcpSocketBase() {
-    if (sockFd_ > 0) {
-        ::close(sockFd_);
-    }
-}
-
 int TcpSocketBase::getSockFd() const {
     return sockFd_;
 }
 
 const std::string& TcpSocketBase::getError() const {
     return errorMessage_;
+}
+
+TcpSocketBase::~TcpSocketBase() {
+    if (sockFd_ > 0) {
+        ::close(sockFd_);
+    }
 }
 }  // namespace net

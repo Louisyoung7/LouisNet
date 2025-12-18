@@ -9,6 +9,8 @@ class Connector : public TcpSocketBase {
    public:
     Connector() : TcpSocketBase(){};
 
+    Connector(int connFd) : TcpSocketBase(connFd){};
+
     ~Connector() override = default;
 
     bool connectTo(const std::string& ip, int port);
@@ -16,5 +18,7 @@ class Connector : public TcpSocketBase {
     int send(const void* data, int length);
 
     int recv(void* buffer, int length);
+
+    int getErrorNo() const;
 };
 }  // namespace net

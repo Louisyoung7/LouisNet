@@ -7,6 +7,7 @@ namespace net {
 class TcpServer {
    private:
     Listener listener;
+    Connector connector;
 
    public:
     TcpServer() : listener(){};
@@ -18,5 +19,7 @@ class TcpServer {
     bool start(const std::string& ip = std::to_string(INADDR_ANY), int port = 8080, int backlog = SOMAXCONN);
 
     int getListenFd() const;
+
+    Connector& accept();
 };
 }  // namespace net
