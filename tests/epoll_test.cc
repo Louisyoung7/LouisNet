@@ -1,7 +1,6 @@
 #include "epoll.hpp"
 
 #include <arpa/inet.h>
-#include <socket/server.h>
 #include <unistd.h>
 
 #include <cstdio>
@@ -10,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "server/server.h"
 #include "utils.hpp"
 using std::cerr;
 using std::cout;
@@ -60,20 +60,21 @@ int main() {
             if (new_fd == lfd) {
                 while (true) {
                     // 这里不关心客户端的地址信息，单纯想建立连接，因此addr和addr_len都传nullptr
-                    net::Connector conn = server.accept();
+                    net::Connector conn(server.accept());
                     int cfd = conn.getSockFd();
-                    int errNo = conn.getErrorNo();
                     if (cfd == -1) {
-                        // 将所有的cfd都注册到了epoll
+                        int errNo = conn.getErrorNo();
                         if (errNo == EAGAIN || errNo == EWOULDBLOCK) {
-                            cout << "Accept complete" << endl;
-                            break;
+                            cout << "No more data to read from fd=" << to_string(lfd) << endl;
+
                         } else {
-                            break;
+                            cerr << "Accept error: " << strerror(errNo) << endl;
                         }
+                        break;
                     } else {
                         // 将获得的cfd设置为非阻塞
                         utils::setNonBlocking(cfd);
+                        cout << cfd << endl;
 
                         cout << "New client connected: fd=" << cfd << endl;
 

@@ -1,13 +1,30 @@
-#include <socket/connector.h>
+#include "socket/connector.h"
+
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <string>
-#include <cstring>
+
 #include <cerrno>
+#include <cstring>
+#include <string>
 using std::string;
 
 namespace net {
+Connector::Connector(Connector&& other) noexcept : TcpSocketBase(std::move(other)) {
+    errNo_ = std::move(other.errNo_);
+}
+
+Connector& Connector::operator=(Connector&& other) noexcept {
+    if (&other == this) {
+        return *this;
+    }
+
+    TcpSocketBase::operator=(std::move(other));
+    errNo_ = std::move(other.errNo_);
+
+    return *this;
+}
+
 bool Connector::connectTo(const std::string& ip, int port) {
     if (!fdIsValid()) {
         setError("Invalid socket fd.");
@@ -41,7 +58,7 @@ int Connector::send(const void* data, int length) {
     ssize_t sendSize = ::send(sockFd_, data, length, 0);
 
     if (sendSize == -1) {
-        errNo = errno;
+        errNo_ = errno;
     }
     return sendSize;
 }
@@ -50,12 +67,12 @@ int Connector::recv(void* buffer, int length) {
     ssize_t recvSize = ::recv(sockFd_, buffer, length, 0);
 
     if (recvSize == -1) {
-        errNo = errno;
+        errNo_ = errno;
     }
     return recvSize;
 }
 
 int Connector::getErrorNo() const {
-    return errNo;
+    return errNo_;
 }
-}
+}  // namespace net

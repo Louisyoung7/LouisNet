@@ -4,6 +4,7 @@
 #include <signal.h>      // for signal
 #include <sys/socket.h>  // for setsockopt
 
+#include <cstring>
 #include <iostream>
 
 namespace utils {
@@ -16,12 +17,12 @@ namespace utils {
 inline bool setNonBlocking(int fd) {
     int flag = ::fcntl(fd, F_GETFL);
     if (flag == -1) {
-        std::cerr << "serNonBlocking failed" << std::endl;
+        std::cerr << "setNonBlocking: get flag failed for fd=" << fd << ". " << ::strerror(errno) << std::endl;
         return false;
     }
 
     if (::fcntl(fd, F_SETFL, flag | O_NONBLOCK) == -1) {
-        std::cerr << "serNonBlocking failed" << std::endl;
+        std::cerr << "setNonBlocking: set flag failed for fd=" << fd << ". " << ::strerror(errno) << std::endl;
         return false;
     }
 
@@ -37,7 +38,7 @@ inline bool setNonBlocking(int fd) {
 inline bool setReuseAddr(int socket) {
     int opt = 1;
     if (::setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
-        std::cerr << "set SO_REUSEADDR failed" << std::endl;
+        std::cerr << "set SO_REUSEADDR failed for fd=" << socket << "." << std::endl;
         return false;
     }
 

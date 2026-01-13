@@ -28,6 +28,24 @@ const std::string& TcpSocketBase::getError() const {
     return errorMessage_;
 }
 
+TcpSocketBase::TcpSocketBase(TcpSocketBase&& other) noexcept : sockFd_(other.sockFd_) {
+    other.sockFd_ = -1;
+    errorMessage_ = std::move(other.errorMessage_);
+}
+
+TcpSocketBase& TcpSocketBase::operator=(TcpSocketBase&& other) noexcept {
+    if (&other == this) {
+        return *this;
+    }
+    if (fdIsValid()) {
+        ::close(sockFd_);
+    }
+    sockFd_ = other.sockFd_;
+    other.sockFd_ = -1;
+    errorMessage_ = std::move(other.errorMessage_);
+    return *this;
+}
+
 TcpSocketBase::~TcpSocketBase() {
     if (sockFd_ > 0) {
         ::close(sockFd_);

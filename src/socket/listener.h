@@ -1,19 +1,23 @@
 #pragma once
 
 #include <arpa/inet.h>
-#include <socket/tcpSocketBase.h>
 #include <sys/socket.h>  // for SOMAXCONN
 
 #include <string>
+
+#include "socket/tcpSocketBase.h"
 
 namespace net {
 /**
  * @brief 对监听套接字的封装
  */
 class Listener : public TcpSocketBase {
-   private:
    public:
     Listener() : TcpSocketBase(){};
+
+    Listener(Listener&& other) noexcept : TcpSocketBase(std::move(other)){};
+
+    Listener& operator=(Listener&& other) noexcept;
 
     ~Listener() override = default;
 
@@ -31,6 +35,11 @@ class Listener : public TcpSocketBase {
      * @brief 接收连接请求
      */
     int accept();
+
+    /**
+     * @brief 获取最新的errno
+     */
+    int getErrNo() const;
 };
 
 }  // namespace net

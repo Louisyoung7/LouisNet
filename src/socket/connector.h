@@ -1,15 +1,17 @@
 #pragma once
 
-#include <socket/tcpSocketBase.h>
+#include "socket/tcpSocketBase.h"
 
 namespace net {
 class Connector : public TcpSocketBase {
-   private:
-    int errNo;  ///< 存储errno
    public:
     Connector() : TcpSocketBase(){};
 
     Connector(int connFd) : TcpSocketBase(connFd){};
+
+    Connector(Connector&& other) noexcept;
+
+    Connector& operator=(Connector&& other) noexcept;
 
     ~Connector() override = default;
 

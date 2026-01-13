@@ -7,6 +7,7 @@ class TcpSocketBase {
    protected:
     int sockFd_;
     std::string errorMessage_;  ///< 存储错误信息
+    int errNo_;
    protected:
     /**
      * @brief 判断底层套接字是否没有问题
@@ -28,6 +29,26 @@ class TcpSocketBase {
      * @brief 构造函数，通过已知套接字初始化
      */
     TcpSocketBase(int sockFd) : sockFd_(sockFd), errorMessage_(""){};
+
+    /**
+     * @brief 禁用拷贝构造函数
+     */
+    TcpSocketBase(const TcpSocketBase& other) = delete;
+
+    /**
+     * @brief 禁用拷贝赋值运算符
+     */
+    TcpSocketBase& operator=(const TcpSocketBase& other) = delete;
+
+    /**
+     * @brief 移动构造函数
+     */
+    TcpSocketBase(TcpSocketBase&& other) noexcept;
+
+    /**
+     * @brief 移动赋值运算符
+     */
+    TcpSocketBase& operator=(TcpSocketBase&& other) noexcept;
 
     /**
      * @brief 虚析构函数

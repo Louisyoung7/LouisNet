@@ -1,15 +1,25 @@
+#include "socket/listener.h"
+
 #include <arpa/inet.h>
-#include <socket/listener.h>
 #include <sys/socket.h>
 
 #include <cerrno>
 #include <cstring>
 #include <string>
-#include <utils.hpp>  // for setReuseAddr
+
+#include "utils.hpp"  // for setReuseAddr
 using std::string;
 using std::to_string;
 
 namespace net {
+Listener& Listener::operator=(Listener&& other) noexcept {
+    if (&other == this) {
+        return *this;
+    }
+    TcpSocketBase::operator=(std::move(other));
+    return *this;
+}
+
 bool Listener::create() {
     sockFd_ = ::socket(AF_INET, SOCK_STREAM, 0);
     if (sockFd_ == -1) {
@@ -70,9 +80,14 @@ int Listener::accept() {
     int connFd = ::accept(sockFd_, nullptr, nullptr);
     if (connFd < 0) {
         setError("accept failed: accept syscall error. " + string(::strerror(errno)));
+        errNo_ = errno;
         return -1;
     }
 
     return connFd;
+}
+
+int Listener::getErrNo() const {
+    return errNo_;
 }
 }  // namespace net

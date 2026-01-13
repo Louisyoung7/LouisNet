@@ -1,16 +1,15 @@
 #pragma once
 
-#include <socket/connector.h>
-#include <socket/listener.h>
+#include "socket/connector.h"
+#include "socket/listener.h"
 
 namespace net {
 class TcpServer {
    private:
-    Listener listener;
-    Connector connector;
+    Listener listener_;
 
    public:
-    TcpServer() : listener(){};
+    TcpServer() = default;
     ~TcpServer() = default;
 
     /**
@@ -20,6 +19,6 @@ class TcpServer {
 
     int getListenFd() const;
 
-    Connector& accept();
+    int accept();
 };
 }  // namespace net

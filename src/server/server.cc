@@ -1,5 +1,6 @@
+#include "server/server.h"
+
 #include <arpa/inet.h>
-#include <socket/server.h>
 #include <unistd.h>
 
 #include <cstring>
@@ -11,13 +12,13 @@ using std::string;
 
 namespace net {
 bool TcpServer::start(const string& ip, int port, int backlog) {
-    if (!listener.create()) {
-        cerr << listener.getError() << endl;
+    if (!listener_.create()) {
+        cerr << listener_.getError() << endl;
         return false;
     }
 
-    if (!listener.bindAndListen(ip, port,backlog)) {
-        cerr << listener.getError() << endl;
+    if (!listener_.bindAndListen(ip, port, backlog)) {
+        cerr << listener_.getError() << endl;
         return false;
     }
 
@@ -25,15 +26,14 @@ bool TcpServer::start(const string& ip, int port, int backlog) {
 }
 
 int TcpServer::getListenFd() const {
-    return listener.getSockFd();
+    return listener_.getSockFd();
 }
 
-Connector& TcpServer::accept() {
-    int cfd = listener.accept();
+int TcpServer::accept() {
+    int cfd = listener_.accept();
     if (cfd == -1) {
-        cerr << listener.getError() << endl;
+        cerr << listener_.getError() << endl;
     }
-    connector = Connector(cfd);
-    return connector;
+    return cfd;
 }
 }  // namespace net
