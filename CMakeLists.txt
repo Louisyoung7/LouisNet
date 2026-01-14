@@ -13,11 +13,10 @@ set(
     RESOURCE
     src/socket/connector.cc
     src/socket/listener.cc
-    src/socket/server.cc
     src/socket/tcpSocketBase.cc
 )
 
-add_executable(epoll_test tests/epoll_test.cc ${RESOURCE})
+# add_executable(epoll_test tests/epoll_test.cc ${RESOURCE})
 
 # 指定目录不是文件
 target_include_directories(epoll_test PRIVATE ${CMAKE_SOURCE_DIR}/src)
