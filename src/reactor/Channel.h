@@ -15,16 +15,17 @@ class Channel {
     using ReadEventCallback = std::function<void()>;
 
     // 事件类型
-    static constexpr int kNoneEvent = 0;
-    static constexpr int kReadEvent = EPOLLIN | EPOLLPRI;
-    static constexpr int kWriteEvent = EPOLLOUT;
+    static constexpr int kNoneEvent = 0;                   ///< 不关心任何事件
+    static constexpr int kReadEvent = EPOLLIN | EPOLLPRI;  ///< 关心读事件和紧急读事件
+    static constexpr int kWriteEvent = EPOLLOUT;           ///< 关心写事件
     static constexpr int kCloseEvent = EPOLLHUP | EPOLLERR;
     static constexpr int kErrorEvent = EPOLLERR;
 
-    // Channel状态
-    static constexpr int kNew = -1;
-    static constexpr int kAdded = 0;
-    static constexpr int kDeleted = 1;
+    //* Channel状态枚举，用于Poller管理
+    //* 这些状态是Channel在Poller中的生命周期状态
+    static constexpr int kNew = -1;     ///< 未添加到Poller，也未注册到epoll
+    static constexpr int kAdded = 0;    ///< 添加到Poller，也注册到epoll
+    static constexpr int kDeleted = 1;  ///< 添加到Poller，但未注册到epoll
 
     // 构造析构
     Channel(EventLoop* loop, int fd);
@@ -37,6 +38,10 @@ class Channel {
     // 获取关心的事件
     uint32_t events() const {
         return events_;
+    }
+    // 查看是否没有关心的事件
+    bool isNoneEvents() const {
+        return events_ == kNoneEvent;
     }
     // 设置发生的事件
     void setRevents(uint32_t revents) {
@@ -84,7 +89,7 @@ class Channel {
     const int fd_;                   // 封装的套接字
     uint32_t events_ = kNoneEvent;   // 关心的事件
     uint32_t revents_ = kNoneEvent;  // 实际发生的事件
-    int index_ = kNew;                 // Channel在Poller中的索引
+    int index_ = kNew;               // Channel在Poller中的索引
 
     // 回调函数
     ReadEventCallback readCallback_;
