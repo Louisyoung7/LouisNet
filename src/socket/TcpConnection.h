@@ -3,7 +3,6 @@
 #include <functional>
 #include <memory>
 
-#include "reactor/Channel.h"
 
 class EventLoop;
 class Socket;
