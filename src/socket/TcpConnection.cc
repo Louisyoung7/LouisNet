@@ -11,6 +11,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <exception>
 
 using std::cerr;
 using std::cout;
@@ -76,13 +77,20 @@ void TcpConnection::connectionDestroyed() {
         setState(StateE::kDisconnected);
     }
 
-    // 关闭Channel所有事件
-    channel_->disableAll();
-    // 从所属的EventLoop中移除
-    channel_->remove();
+    try {
+        // 关闭Channel所有事件
+        channel_->disableAll();
+        // 从所属的EventLoop中移除
+        channel_->remove();
 
-    cout << "[TcpConnection] connectionDestroyed() connection " << name_ << " destroyed" << endl << endl;
+        cout << "[TcpConnection] connectionDestroyed() connection " << name_ << " destroyed" << endl << endl;
+    } catch (const std::exception& e) {
+        cerr << "[TcpConnection] connectionDestroyed() error: " << e.what() << endl << endl;
+    }
+
+    // TcpConnection对象的真正销毁由智能指针管理，当引用计数归零，自动调用析构函数
 }
+
 // 从sockfd读取数据到接收缓冲区，如果有数据则调用消息接收回调，无数据则关闭连接
 void TcpConnection::handleRead() {
     // 用于获取和保存errno，方便判断错误
