@@ -115,6 +115,13 @@ void Poller::removeChannel(Channel* channel) {
     // 断言channel在map中存在
     assert(fd_channel_map_.find(fd) != fd_channel_map_.end());
     assert(fd_channel_map_[fd] = channel);
+
+    // 确保Channel没有注册任何事件
+    if (!channel->isNoneEvent()) {
+        // 禁用所有事件
+        channel->disableAll();
+    }
+
     assert(channel->isNoneEvent());
     // 从epoll中取消注册fd
     delFd(fd);

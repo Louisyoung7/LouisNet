@@ -92,13 +92,9 @@ void TcpServer::onConnection(const TcpConnectionPtr& conn) {
 // 处理关闭事件
 // 在onNewConnection中被设置为新创建的TcpConnection的回调函数
 void TcpServer::onClose(const TcpConnectionPtr& conn) {
-    try {
-        cout << "[TcpServer] onClose() connection " << conn->name() << " closed" << endl << endl;
-        // 从map中移除连接记录
-        // 后续由TcpConnection自动管理生命周期
-        connections_.erase(conn->fd());
-    } catch (const std::exception& e) {
-        cerr << "[TcpServer] onClose() error: " << e.what() << endl << endl;
-    }
+    cout << "[TcpServer] onClose() connection " << conn->name() << " closed" << endl << endl;
+    // 从map中移除连接记录
+    // 后续由TcpConnection自动管理生命周期
+    connections_.erase(conn->fd());
 }
 }  // namespace server

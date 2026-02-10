@@ -10,6 +10,8 @@ Channel::Channel(EventLoop* loop, int fd)
 }
 Channel::~Channel() {
     if (index_ != kNew) {
+        // 确保Channel没有注册任何事件
+        disableAll();
         loop_->removeChannel(this);
     }
 }

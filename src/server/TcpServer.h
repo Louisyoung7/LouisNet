@@ -7,6 +7,7 @@
 
 #include "socket/InetAddress.h"
 #include "utils/Buffer.h"
+#include "socket/TcpConnection.h"
 
 namespace reactor {
 class EventLoop;
@@ -14,7 +15,6 @@ class EventLoop;
 
 namespace net {
 class Acceptor;
-class TcpConnection;
 }  // namespace net
 
 namespace server {
@@ -31,6 +31,11 @@ class TcpServer {
     TcpServer(reactor::EventLoop* loop, const net::InetAddress& listenAddr);
     // 析构函数
     ~TcpServer();
+
+    // 获取监听地址信息
+    const net::InetAddress& listenAddr() const {
+        return listenAddr_;
+    }
 
     // 启动服务器
     void start();

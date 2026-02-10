@@ -50,10 +50,11 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
         return name_;
     }
 
-    // 查询连接状态
+    // 查询是否已连接
     bool connected() const {
         return state_ == StateE::kConnected;
     }
+    // 查询是否断开连接
     bool disconnected() const {
         return state_ == StateE::kDisconnected;
     }
