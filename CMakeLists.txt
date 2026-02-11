@@ -19,3 +19,13 @@ add_library(MyWebServer STATIC ${SOURCES})
 target_include_directories(MyWebServer PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
 add_subdirectory(example)
+
+# 测试相关配置
+option(BUILD_TESTS "Build tests" OFF)
+
+enable_testing()
+
+if(BUILD_TESTS)
+  # 添加测试子目录
+  add_subdirectory(tests)
+endif()
