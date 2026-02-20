@@ -18,7 +18,7 @@ class Channel {
     static constexpr int kNoneEvent = 0;                   ///< 不关心任何事件
     static constexpr int kReadEvent = EPOLLIN | EPOLLPRI;  ///< 关心读事件和紧急读事件
     static constexpr int kWriteEvent = EPOLLOUT;           ///< 关心写事件
-    static constexpr int kErrorEvent = EPOLLHUP | EPOLLRDHUP | EPOLLERR;
+    static constexpr int kErrorEvent = EPOLLERR;
     static constexpr int kCloseEvent = EPOLLHUP | EPOLLRDHUP;
 
     //* Channel状态枚举，用于Poller管理
