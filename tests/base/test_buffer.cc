@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
+
 #include <cstddef>
 
-#include "utils/Buffer.h"
+#include "base/Buffer.h"
 
 class BufferTest : public ::testing::Test {
    protected:
@@ -11,7 +12,7 @@ class BufferTest : public ::testing::Test {
     void TearDown() override {
     }
 
-    utils::Buffer buffer_;
+    base::Buffer buffer_;
 };
 
 // 测试写入和读取的基本功能
@@ -57,7 +58,7 @@ TEST_F(BufferTest, PartialRead) {
 TEST_F(BufferTest, Boundary) {
     // 空缓冲区测试
     EXPECT_EQ(buffer_.readableBytes(), 0);
-    EXPECT_EQ(buffer_.writableBytes(), utils::Buffer::kInitialSize);
+    EXPECT_EQ(buffer_.writableBytes(), base::Buffer::kInitialSize);
     EXPECT_EQ(buffer_.retrieveAllAsString(), "");
 
     // 大量数据测试
@@ -83,5 +84,5 @@ TEST_F(BufferTest, BufferResize) {
     EXPECT_EQ(buffer_.readableBytes(), 0);
 
     // 读取数据后，缓冲区大小应该保持合理
-    EXPECT_GE(buffer_.writableBytes(), utils::Buffer::kInitialSize);
+    EXPECT_GE(buffer_.writableBytes(), base::Buffer::kInitialSize);
 }

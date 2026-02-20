@@ -7,7 +7,7 @@
 #include <cassert>
 #include <cstddef>
 
-namespace utils {
+namespace base {
 // 双缓冲区设计：buffer + 栈上extrabuf
 ssize_t Buffer::readFd(int fd, int* savedErrno) {
     // 栈上预分配64kb缓冲区
@@ -86,4 +86,4 @@ void Buffer::makeSpace(size_t len) {
         assert(readable == readableBytes());
     }
 }
-}  // namespace utils
+}  // namespace base

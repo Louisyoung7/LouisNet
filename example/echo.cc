@@ -1,21 +1,21 @@
 #include <iostream>
 
-#include "reactor/EventLoop.h"
-#include "server/EchoServer.h"
-#include "socket/InetAddress.h"
+#include "EchoServer.h"
+#include "net/InetAddress.h"
+#include "net/reactor/EventLoop.h"
 
 using std::cout;
 using std::endl;
 
 int main() {
     // 创建EventLoop
-    reactor::EventLoop loop;
+    net::reactor::EventLoop loop;
 
     // 配置本端地址
     net::InetAddress listenAddr(8888);
 
     // 创建EchoServer
-    server::EchoServer server(&loop, listenAddr);
+    EchoServer server(&loop, listenAddr);
 
     // 启动服务器
     server.start();

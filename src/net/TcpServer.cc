@@ -5,14 +5,14 @@
 #include <iostream>
 #include <memory>
 
-#include "socket/Acceptor.h"
-#include "socket/TcpConnection.h"
+#include "net/Acceptor.h"
+#include "net/TcpConnection.h"
 
 using std::cerr;
 using std::cout;
 using std::endl;
 
-namespace server {
+namespace net {
 // 构造函数
 // 初始化TcpServer，并设置Acceptor实例的新连接回调函数
 TcpServer::TcpServer(reactor::EventLoop* loop, const net::InetAddress& listenAddr)
@@ -56,7 +56,7 @@ void TcpServer::onNewConnection(int sockfd, const net::InetAddress& peerAddr) {
         conn->setConnectionCallback([this](const TcpConnectionPtr& conn) { onConnection(conn); });
         // 设置消息接收回调
         conn->setMessageCallback(
-            [this](const TcpConnectionPtr& conn, utils::Buffer& buffer) { messageCallback_(conn, buffer); });
+            [this](const TcpConnectionPtr& conn, base::Buffer& buffer) { messageCallback_(conn, buffer); });
         // 设置写完成回调
         conn->setWriteCompleteCallback([this](const TcpConnectionPtr& conn) {
             if (writeCompleteCallback_) {
@@ -97,4 +97,4 @@ void TcpServer::onClose(const TcpConnectionPtr& conn) {
     // 后续由TcpConnection自动管理生命周期
     connections_.erase(conn->fd());
 }
-}  // namespace server
+}  // namespace net

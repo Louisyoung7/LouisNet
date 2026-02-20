@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace utils {
+namespace base {
 class Buffer {
    public:
     // 预留8字节，方便添加协议头部
@@ -145,4 +145,4 @@ class Buffer {
     size_t readerIndex_;
     size_t writerIndex_;
 };
-}  // namespace utils
+}  // namespace base

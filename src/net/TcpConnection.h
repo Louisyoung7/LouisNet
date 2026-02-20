@@ -7,14 +7,15 @@
 #include <utility>
 
 #include "InetAddress.h"
-#include "utils/Buffer.h"
+#include "base/Buffer.h"
+
+namespace net {
 
 namespace reactor {
 class EventLoop;
 class Channel;
 }  // namespace reactor
 
-namespace net {
 class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
    public:
     // 智能指针类型定义
@@ -22,7 +23,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
     // 回调函数类型定义
     using ConnectionCallback = std::function<void(const TcpConnectionPtr&)>;
-    using MessageCallback = std::function<void(const TcpConnectionPtr&, utils::Buffer&)>;
+    using MessageCallback = std::function<void(const TcpConnectionPtr&, base::Buffer&)>;
     using WriteCompleteCallback = std::function<void(const TcpConnectionPtr&)>;
     using CloseCallback = std::function<void(const TcpConnectionPtr&)>;
 
@@ -133,7 +134,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     WriteCompleteCallback writeCompleteCallback_;  ///< 写完成回调
     CloseCallback closeCallback_;                  ///< 连接关闭回调
 
-    utils::Buffer outputBuffer_;  ///< 发送缓冲区
-    utils::Buffer inputBuffer_;   ///< 接收缓冲区
+    base::Buffer outputBuffer_;  ///< 发送缓冲区
+    base::Buffer inputBuffer_;   ///< 接收缓冲区
 };
 }  // namespace net

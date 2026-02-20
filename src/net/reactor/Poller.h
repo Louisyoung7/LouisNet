@@ -8,7 +8,7 @@
 #include <map>
 #include <vector>
 
-namespace reactor {
+namespace net::reactor {
 class Channel;
 class EventLoop;
 
@@ -43,4 +43,4 @@ class Poller {
     ChannelMap fd_channel_map_;               ///< 存储所有fd:Channel的映射
     std::vector<struct epoll_event> events_;  ///< 存储epoll_wait返回的事件
 };
-}  // namespace reactor
+}  // namespace net::reactor

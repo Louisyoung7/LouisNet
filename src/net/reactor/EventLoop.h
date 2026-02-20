@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-namespace reactor {
+namespace net::reactor {
 class Channel;
 class Poller;
 
@@ -35,4 +35,4 @@ class EventLoop {
     struct Impl;                  // 定义内部结构体
     std::unique_ptr<Impl> impl_;  // 指向内部结构体实例的指针
 };
-}  // namespace reactor
+}  // namespace net::reactor

@@ -5,7 +5,7 @@
 #include <cstdint>  // for uint32_t
 #include <functional>
 
-namespace reactor {
+namespace net::reactor {
 class EventLoop;
 class Poller;
 
@@ -130,4 +130,4 @@ class Channel {
     EventCallback closeCallback_;
     EventCallback errorCallback_;
 };
-}  // namespace reactor
+}  // namespace net::reactor

@@ -3,12 +3,12 @@
 #include <functional>
 #include <memory>
 
+namespace net {
+
 namespace reactor {
 class EventLoop;
 class Channel;
 }  // namespace reactor
-
-namespace net {
 
 class InetAddress;
 
@@ -44,10 +44,10 @@ class Acceptor {
     void handleRead();
 
     reactor::EventLoop* loop_;                         ///< 所属的EventLoop
-    const InetAddress& listenAddr_;                         ///< 监听地址
-    bool listening_;                                        ///< 是否正在监听
-    int listenFd_;                                          ///< 监听socket的文件描述符
+    const InetAddress& listenAddr_;                    ///< 监听地址
+    bool listening_;                                   ///< 是否正在监听
+    int listenFd_;                                     ///< 监听socket的文件描述符
     std::unique_ptr<reactor::Channel> acceptChannel_;  ///< 监听Channel
-    NewConnectionCallback newConnectionCallback_;           ///< 新连接回调函数
+    NewConnectionCallback newConnectionCallback_;      ///< 新连接回调函数
 };
 }  // namespace net

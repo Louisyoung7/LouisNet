@@ -5,7 +5,7 @@
 
 #include <string>
 
-#include "socket/InetAddress.h"
+#include "net/InetAddress.h"
 
 using net::InetAddress;
 
@@ -45,7 +45,7 @@ TEST(InetAddressTest, SockaddrConstructor) {
     const std::string ip = "192.168.1.1";
     const int port = 12345;
 
-    struct sockaddr_in sock_addr{};
+    struct sockaddr_in sock_addr {};
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_port = ::htons(port);
     ::inet_pton(AF_INET, ip.data(), &sock_addr.sin_addr);

@@ -8,16 +8,15 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-namespace server {
 // 构造函数
-EchoServer::EchoServer(reactor::EventLoop* loop, const net::InetAddress& listenAddr)
-    : server_(std::make_unique<TcpServer>(loop, listenAddr)) {
+EchoServer::EchoServer(net::reactor::EventLoop* loop, const net::InetAddress& listenAddr)
+    : server_(std::make_unique<net::TcpServer>(loop, listenAddr)) {
     // 设置消息接收回调
     server_->setMessageCallback(
-        [this](const TcpServer::TcpConnectionPtr& conn, utils::Buffer& buffer) { onMessage(conn, buffer); });
-    
+        [this](const net::TcpServer::TcpConnectionPtr& conn, base::Buffer& buffer) { onMessage(conn, buffer); });
+
     // 设置连接状态回调
-    server_->setConnectionCallback([this](const TcpServer::TcpConnectionPtr& conn) { onConnection(conn); });
+    server_->setConnectionCallback([this](const net::TcpServer::TcpConnectionPtr& conn) { onConnection(conn); });
 }
 
 // 启动服务器
@@ -33,7 +32,7 @@ void EchoServer::start() {
 
 // 处理连接状态变化
 // 被设置为TcpServer的连接状态回调，在连接状态变化时输出日志
-void EchoServer::onConnection(const TcpServer::TcpConnectionPtr& conn) {
+void EchoServer::onConnection(const net::TcpServer::TcpConnectionPtr& conn) {
     if (conn->connected()) {
         cout << "[EchoServer] onConnection() connection " << conn->name() << " established" << endl << endl;
     } else {
@@ -43,7 +42,7 @@ void EchoServer::onConnection(const TcpServer::TcpConnectionPtr& conn) {
 
 // 处理消息接收
 // 被设置为TcpServer的消息接收回调，调用连接实例的send方法回显数据
-void EchoServer::onMessage(const TcpServer::TcpConnectionPtr& conn, utils::Buffer& buffer) {
+void EchoServer::onMessage(const net::TcpServer::TcpConnectionPtr& conn, base::Buffer& buffer) {
     try {
         // 读取buffer中的所有可读数据到string
         std::string message = buffer.retrieveAllAsString();
@@ -51,7 +50,7 @@ void EchoServer::onMessage(const TcpServer::TcpConnectionPtr& conn, utils::Buffe
         cout << "[EchoServer] onMessage() connection " << conn->name() << " received " << message.size()
              << " bytes: " << message << endl
              << endl;
-        
+
         // 回显数据
         conn->send(message);
     } catch (const std::exception& e) {
@@ -59,4 +58,3 @@ void EchoServer::onMessage(const TcpServer::TcpConnectionPtr& conn, utils::Buffe
         return;
     }
 }
-}  // namespace server

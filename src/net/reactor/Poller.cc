@@ -16,7 +16,7 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-namespace reactor {
+namespace net::reactor {
 // 构造析构
 Poller::Poller(EventLoop* loop) : owner_loop_(loop), epollFd_(::epoll_create1(EPOLL_CLOEXEC)), events_(16) {
     if (epollFd_ == -1) {
@@ -189,4 +189,4 @@ void Poller::fillActiveChannels(int nfds, ChannelList& active_channels) const {
         }
     }
 }
-}  // namespace reactor
+}  // namespace net::reactor

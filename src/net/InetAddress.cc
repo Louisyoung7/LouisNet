@@ -1,6 +1,7 @@
 #include "InetAddress.h"
 
 #include <arpa/inet.h>
+
 #include <cstdint>
 
 namespace net {

@@ -10,7 +10,7 @@
 using std::cout;
 using std::endl;
 
-namespace reactor {
+namespace net::reactor {
 // 定义内部结构体
 struct EventLoop::Impl {
     std::unique_ptr<Poller> poller;  // 指向EventLoop内部的Poller实例
@@ -72,4 +72,4 @@ void EventLoop::removeChannel(Channel* channel) {
 void EventLoop::poll(int timeout_ms, ChannelList& active_channels) {
     impl_->poller->poll(timeout_ms, active_channels);
 }
-}  // namespace reactor
+}  // namespace net::reactor

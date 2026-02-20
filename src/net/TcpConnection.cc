@@ -8,10 +8,10 @@
 #include <cassert>
 #include <cstddef>
 #include <cstring>
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <sstream>
-#include <exception>
 
 using std::cerr;
 using std::cout;
@@ -285,7 +285,7 @@ void TcpConnection::shutdown() {
 void TcpConnection::shutdownInLoop() {
     // 只有在没有使能写事件（发送缓冲区可能为空时）才关闭写端
     if (!channel_->isWriting()) {
-        ::shutdown(sockfd_, SHUT_WR);   // 半关闭，只关闭写端
+        ::shutdown(sockfd_, SHUT_WR);  // 半关闭，只关闭写端
     }
 }
 
