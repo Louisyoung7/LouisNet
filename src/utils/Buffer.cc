@@ -83,7 +83,7 @@ void Buffer::makeSpace(size_t len) {
 
         // 确保操作逻辑争取
         assert(kCheapPrepend + readable == writerIndex_);
-        assert(readable = readableBytes());
+        assert(readable == readableBytes());
     }
 }
 }  // namespace utils

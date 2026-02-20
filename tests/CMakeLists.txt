@@ -1,15 +1,17 @@
 # 查找Google Test
 find_package(GTest REQUIRED)
 
+file(GLOB TEST_SOURCES *.cc)
+
 # 添加可执行目标
-add_executable(test_inet_address test_inet_address.cc)
+add_executable(tests ${TEST_SOURCES})
 
 # 链接Google Test和必要的库
-target_link_libraries(test_inet_address ${GTEST_BOTH_LIBRARIES} pthread MyWebServer)
+target_link_libraries(tests ${GTEST_BOTH_LIBRARIES} pthread MyWebServer)
 
 # 包含头文件目录
-target_include_directories(test_inet_address PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_include_directories(tests PRIVATE "${PROJECT_SOURCE_DIR}/src")
 
 # 添加测试
 include(GoogleTest)
-gtest_discover_tests(test_inet_address)
+gtest_discover_tests(tests)

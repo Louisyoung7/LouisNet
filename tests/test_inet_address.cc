@@ -10,7 +10,7 @@
 using net::InetAddress;
 
 // 测试IPv4地址构造与获取地址信息方法
-TEST(InetAddress, IPv4Address) {
+TEST(InetAddressTest, IPv4Address) {
     const std::string ip = "127.0.0.1";
     const int port = 8080;
     InetAddress addr(ip, port);
@@ -21,7 +21,7 @@ TEST(InetAddress, IPv4Address) {
 }
 
 // 测试仅端口构造
-TEST(InetAddress, PortOnlyConstructor) {
+TEST(InetAddressTest, PortOnlyConstructor) {
     const int port = 9999;
     InetAddress addr(port);
 
@@ -31,7 +31,7 @@ TEST(InetAddress, PortOnlyConstructor) {
 }
 
 // 测试仅端口构造且在本地回环
-TEST(InetAddress, PortOnlyConstructorWithLoopbackOnly) {
+TEST(InetAddressTest, PortOnlyConstructorWithLoopbackOnly) {
     const int port = 8888;
     InetAddress addr(port, true);
 
@@ -41,7 +41,7 @@ TEST(InetAddress, PortOnlyConstructorWithLoopbackOnly) {
 }
 
 // 测试sockaddr_in构造
-TEST(InetAddress, SockaddrConstructor) {
+TEST(InetAddressTest, SockaddrConstructor) {
     const std::string ip = "192.168.1.1";
     const int port = 12345;
 
@@ -58,7 +58,7 @@ TEST(InetAddress, SockaddrConstructor) {
 }
 
 // 测试端口边界情况
-TEST(InetAddress, PortBoundaries) {
+TEST(InetAddressTest, PortBoundaries) {
     // 测试最小有效端口
     InetAddress addr_min(1);
     EXPECT_EQ(addr_min.toIpPort(), "0.0.0.0:1");
@@ -69,7 +69,7 @@ TEST(InetAddress, PortBoundaries) {
 }
 
 // 测试特殊IP地址
-TEST(InetAddress, SpecialIpAddresses) {
+TEST(InetAddressTest, SpecialIpAddresses) {
     // 测试回环地址
     InetAddress loopback("127.0.0.1", 8888);
     EXPECT_EQ(loopback.toIpPort(), "127.0.0.1:8888");
