@@ -1,7 +1,7 @@
 # 查找Google Test
 find_package(GTest REQUIRED)
 
-file(GLOB_RECURSE TEST_SOURCES *.cc)
+file(GLOB_RECURSE TEST_SOURCES test_buffer.cc test_inet_address.cc test_channel.cc test_poller.cc)
 
 # 添加可执行目标
 add_executable(tests ${TEST_SOURCES})
