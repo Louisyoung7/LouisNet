@@ -6,6 +6,7 @@
 #include <string>
 
 #include "base/Buffer.h"
+#include "base/noncopyable.h"
 #include "net/InetAddress.h"
 #include "net/TcpConnection.h"
 
@@ -17,7 +18,7 @@ class EventLoop;
 
 class Acceptor;
 
-class TcpServer {
+class TcpServer : public base::noncopyable {
    public:
     // 连接智能指针类型定义
     using TcpConnectionPtr = std::shared_ptr<net::TcpConnection>;

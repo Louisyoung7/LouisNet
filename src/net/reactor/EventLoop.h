@@ -4,11 +4,13 @@
 #include <memory>
 #include <vector>
 
+#include "base/noncopyable.h"
+
 namespace net::reactor {
 class Channel;
 class Poller;
 
-class EventLoop {
+class EventLoop : public base::noncopyable {
    public:
     using Functor = std::function<void()>;
     using ChannelList = std::vector<Channel*>;

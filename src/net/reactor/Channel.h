@@ -5,11 +5,13 @@
 #include <cstdint>  // for uint32_t
 #include <functional>
 
+#include "base/noncopyable.h"
+
 namespace net::reactor {
 class EventLoop;
 class Poller;
 
-class Channel {
+class Channel : public base::noncopyable {
    public:
     using EventCallback = std::function<void()>;
     using ReadEventCallback = std::function<void()>;

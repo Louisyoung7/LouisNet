@@ -5,8 +5,10 @@
 #include <cstdint>
 #include <string>
 
+#include "base/noncopyable.h"
+
 namespace net {
-class InetAddress {
+class InetAddress : public base::noncopyable {
    public:
     // 仅端口构造，可以指定是否本地回环
     explicit InetAddress(uint16_t port = 0,

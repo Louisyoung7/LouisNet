@@ -3,6 +3,8 @@
 #include <functional>
 #include <memory>
 
+#include "base/noncopyable.h"
+
 namespace net {
 
 namespace reactor {
@@ -12,7 +14,7 @@ class Channel;
 
 class InetAddress;
 
-class Acceptor {
+class Acceptor : public base::noncopyable {
    public:
     using NewConnectionCallback = std::function<void(int sockfd, const InetAddress& peerAddr)>;
 

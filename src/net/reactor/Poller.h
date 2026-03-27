@@ -8,11 +8,13 @@
 #include <map>
 #include <vector>
 
+#include "base/noncopyable.h"
+
 namespace net::reactor {
 class Channel;
 class EventLoop;
 
-class Poller {
+class Poller : public base::noncopyable {
    public:
     using ChannelList = std::vector<Channel*>;
     using ChannelMap = std::map<int, Channel*>;

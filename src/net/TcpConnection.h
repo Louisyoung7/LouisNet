@@ -8,6 +8,7 @@
 
 #include "InetAddress.h"
 #include "base/Buffer.h"
+#include "base/noncopyable.h"
 
 namespace net {
 
@@ -16,7 +17,7 @@ class EventLoop;
 class Channel;
 }  // namespace reactor
 
-class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
+class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public base::noncopyable {
    public:
     // 智能指针类型定义
     using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
