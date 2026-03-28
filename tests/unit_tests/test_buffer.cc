@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <cstddef>
-
 #include "base/Buffer.h"
 
 class BufferTest : public ::testing::Test {

@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "InetAddress.h"
+#include "Socket.h"
 #include "base/Buffer.h"
 #include "base/noncopyable.h"
 
@@ -40,7 +41,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
         return loop_;
     }
     int fd() const {
-        return sockfd_;
+        return socket_->fd();
     }
     const InetAddress& localAddress() const {
         return localAddr_;
@@ -70,9 +71,6 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
     void shutdown();
     // 强制关闭连接
     void forceClose();
-
-    // 设置TCP_NODELAY选项
-    void setTcpNoDelay(bool on);
 
     // 获取错误状态
     int getError() const {
@@ -112,18 +110,16 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
     void shutdownInLoop();
     // 在IO线程中强制关闭连接
     void forceCloseInLoop();
-    // 在IO线程中设置TCP_NODELAY选项
-    void setTcpNoDelayInLoop(bool on);
 
     void setState(StateE s) {
         state_ = s;
     }
 
-    reactor::EventLoop* loop_;  ///< 所属的EventLoop
-    const int sockfd_;          ///< 底层通信套接字
-    std::string name_;          ///< 连接名称
-    StateE state_;              ///< 连接状态
-    int error_;                 ///< 错误状态
+    reactor::EventLoop* loop_;        ///< 所属的EventLoop
+    std::unique_ptr<Socket> socket_;  ///< 底层通信套接字
+    std::string name_;                ///< 连接名称
+    StateE state_;                    ///< 连接状态
+    int error_;                       ///< 错误状态
 
     std::unique_ptr<reactor::Channel> channel_;  ///< 连接的Channel
     const InetAddress localAddr_;                ///< 本端地址

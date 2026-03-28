@@ -19,7 +19,7 @@ TcpServer::TcpServer(reactor::EventLoop* loop, const net::InetAddress& listenAdd
     : loop_(loop),
       listenAddr_(listenAddr),
       name_("TcpServer@" + listenAddr.toIpPort()),
-      acceptor_(std::make_unique<net::Acceptor>(loop, listenAddr)) {
+      acceptor_(std::make_unique<net::Acceptor>(loop, listenAddr, true)) {
     // 设置Acceptor实例的新连接回调函数
     // 新连接回调函数需要Acceptor获取的通信套接字和对端地址作为参数
     acceptor_->setNewConnectionCallback(

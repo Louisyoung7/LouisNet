@@ -3,9 +3,11 @@
 #include <string>
 
 namespace base {
+
 // 时间戳类
 // 1.提供直观集中的获取时间的API
 // 2.类型安全，将整型转换为Timestamp类，明确表明这是时间戳不是普通整数
+
 class Timestamp {
     int64_t microSecondsSinceEpoch_ = 0;
 

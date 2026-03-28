@@ -23,7 +23,7 @@ namespace net {
 TcpConnection::TcpConnection(reactor::EventLoop* loop, int sockfd, const InetAddress& localAddr,
                              const InetAddress& peerAddr)
     : loop_(loop),
-      sockfd_(sockfd),
+      socket_(std::make_unique<Socket>(sockfd)),
       state_(StateE::kConnecting),
       error_(0),
       channel_(std::make_unique<reactor::Channel>(loop, sockfd)),
@@ -31,8 +31,13 @@ TcpConnection::TcpConnection(reactor::EventLoop* loop, int sockfd, const InetAdd
       peerAddr_(peerAddr) {
     // 生成连接名称
     std::ostringstream oss;
-    oss << "conn-" << sockfd_ << "-" << peerAddr.toIpPort();
+    oss << "conn-" << socket_->fd() << "-" << peerAddr.toIpPort();
     name_ = oss.str();
+
+    // 默认设置TCP_NODELAY选项，减少延迟
+    socket_->setTcpNoDelay(true);
+    // 设置保持连接选项，防止连接超时
+    socket_->setKeepAlive(true);
 
     // 设置Channel的事件回调，绑定TcpConnection相应的成员函数
     channel_->setReadCallback([this]() { handleRead(); });
@@ -40,17 +45,11 @@ TcpConnection::TcpConnection(reactor::EventLoop* loop, int sockfd, const InetAdd
     channel_->setCloseCallback([this]() { handleClose(); });
     channel_->setErrorCallback([this]() { handleError(); });
 
-    // 默认设置TCP_NODELAY选项，减少延迟
-    setTcpNoDelay(true);
-
     cout << "[TcpConnection] TcpConnection() created connection " << name_ << endl << endl;
 }
 TcpConnection::~TcpConnection() {
     // 析构函数调用时，确保连接已经断开
     assert(state_ == StateE::kDisconnected);
-
-    // 完全关闭socket文件描述符
-    ::close(sockfd_);
 
     cout << "[TcpConnection] ~TcpConnecion() destroying connection " << name_ << endl << endl;
 }
@@ -97,7 +96,7 @@ void TcpConnection::handleRead() {
     int savedError = 0;
 
     // 从sockfd读取数据到接收缓冲区
-    ssize_t n = inputBuffer_.readFd(sockfd_, &savedError);
+    ssize_t n = inputBuffer_.readFd(socket_->fd(), &savedError);
 
     if (n > 0) {
         // 接收到数据，调用消息接收回调
@@ -125,7 +124,7 @@ void TcpConnection::handleWrite() {
         int savedError = 0;
 
         // 用发送缓冲区向sockfd写入数据
-        ssize_t n = outputBuffer_.writeFd(sockfd_, &savedError);
+        ssize_t n = outputBuffer_.writeFd(socket_->fd(), &savedError);
 
         if (n > 0) {
             // 数据写出完了
@@ -188,7 +187,7 @@ void TcpConnection::handleError() {
     // 获取sockfd的出错时的errno
     // 这里出现的错误相对于handleError()是异步的，不能直接用errno
     // 而是通过getsockopt获取SO_ERROR选项来获取最新的错误状态
-    if (::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) {
+    if (::getsockopt(socket_->fd(), SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) {
         optval = errno;
     }
 
@@ -237,7 +236,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
 
     // 当输出缓冲区为空（没有任何待发送的数据），且没有正在写事件，优先尝试立即写入
     if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0) {
-        nwrote = ::write(sockfd_, data, len);
+        nwrote = ::write(socket_->fd(), data, len);
 
         if (nwrote >= 0) {
             // 写入nwrote字节，更新剩余未写入字节数
@@ -285,7 +284,7 @@ void TcpConnection::shutdown() {
 void TcpConnection::shutdownInLoop() {
     // 只有在没有使能写事件（发送缓冲区可能为空时）才关闭写端
     if (!channel_->isWriting()) {
-        ::shutdown(sockfd_, SHUT_WR);  // 半关闭，只关闭写端
+        ::shutdown(socket_->fd(), SHUT_WR);  // 半关闭，只关闭写端
     }
 }
 
@@ -300,18 +299,6 @@ void TcpConnection::forceClose() {
 void TcpConnection::forceCloseInLoop() {
     if (state_ == StateE::kConnected || state_ == StateE::kDisconnecting) {
         handleClose();
-    }
-}
-
-// 设置TCP_NODELAY选项
-void TcpConnection::setTcpNoDelay(bool on) {
-    setTcpNoDelayInLoop(on);
-}
-// 在IO线程中设置TCP_NODELAY选项
-void TcpConnection::setTcpNoDelayInLoop(bool on) {
-    int optval = on ? 1 : 0;
-    if (::setsockopt(sockfd_, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval)) < 0) {
-        cerr << "[TcpConnection] setTcpNoDelayInLoop() error: " << strerror(errno) << endl << endl;
     }
 }
 }  // namespace net

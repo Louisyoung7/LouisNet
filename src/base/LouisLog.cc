@@ -11,8 +11,7 @@
 #include <string>
 #include <thread>
 
-namespace louis {
-namespace log {
+namespace louis::log {
 // 获取日志单例
 LouisLog& LouisLog::getInstance() {
     // Meyers 单例：静态局部变量的首次初始化是线程安全的
@@ -213,4 +212,3 @@ void LouisLog::openLogFile() {
 }
 
 }  // namespace log
-}  // namespace louis
