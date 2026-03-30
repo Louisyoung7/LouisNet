@@ -3,7 +3,7 @@
 #include <sys/epoll.h>  // for epoll_event
 
 #include <cstdint>  // for uint32_t
-#include <functional>
+#include "functional"
 
 #include "base/noncopyable.h"
 
@@ -12,10 +12,22 @@ class EventLoop;
 class Poller;
 
 class Channel : public base::noncopyable {
-   public:
     using EventCallback = std::function<void()>;
     using ReadEventCallback = std::function<void()>;
 
+    EventLoop* loop_;   // 所属的EventLoop
+    const int fd_;      // 封装的套接字
+    uint32_t events_;   // 关心的事件
+    uint32_t revents_;  // 实际发生的事件
+    int index_;         // Channel在Poller中的索引
+
+    // 回调函数
+    ReadEventCallback readCallback_;
+    EventCallback writeCallback_;
+    EventCallback closeCallback_;
+    EventCallback errorCallback_;
+
+   public:
     // 事件类型
     static constexpr int kNoneEvent = 0;                   ///< 不关心任何事件
     static constexpr int kReadEvent = EPOLLIN | EPOLLPRI;  ///< 关心读事件和紧急读事件
@@ -119,17 +131,5 @@ class Channel : public base::noncopyable {
    private:
     // 更新Channel
     void update();
-
-    EventLoop* loop_;   // 所属的EventLoop
-    const int fd_;      // 封装的套接字
-    uint32_t events_;   // 关心的事件
-    uint32_t revents_;  // 实际发生的事件
-    int index_;         // Channel在Poller中的索引
-
-    // 回调函数
-    ReadEventCallback readCallback_;
-    EventCallback writeCallback_;
-    EventCallback closeCallback_;
-    EventCallback errorCallback_;
 };
 }  // namespace net::reactor

@@ -10,6 +10,16 @@
 
 namespace base {
 class Buffer {
+    // 使用vector<char>更契合TCP的流式传输
+    std::vector<char> buffer_;
+    // 读索引和写索引，将buffer划分为预留区，可读区，可写区
+    // [预留区域][可读数据][可写区域]
+    // 预留区域：readerIndex_ 之前的空间
+    // 可读数据：readerIndex_ 到 writerIndex_ 之间的空间
+    // 可写区域：writerIndex_ 到缓冲区末尾的空间
+    size_t readerIndex_;
+    size_t writerIndex_;
+
    public:
     // 预留8字节，方便添加协议头部
     static constexpr size_t kCheapPrepend = 8;
@@ -134,15 +144,5 @@ class Buffer {
 
     // 根据传入的len判断是整理空间还是扩容
     void makeSpace(size_t len);
-
-    // 使用vector<char>更契合TCP的流式传输
-    std::vector<char> buffer_;
-    // 读索引和写索引，将buffer划分为预留区，可读区，可写区
-    // [预留区域][可读数据][可写区域]
-    // 预留区域：readerIndex_ 之前的空间
-    // 可读数据：readerIndex_ 到 writerIndex_ 之间的空间
-    // 可写区域：writerIndex_ 到缓冲区末尾的空间
-    size_t readerIndex_;
-    size_t writerIndex_;
 };
 }  // namespace base

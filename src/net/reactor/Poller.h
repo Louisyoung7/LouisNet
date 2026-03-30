@@ -15,9 +15,15 @@ class Channel;
 class EventLoop;
 
 class Poller : public base::noncopyable {
-   public:
     using ChannelList = std::vector<Channel*>;
     using ChannelMap = std::map<int, Channel*>;
+
+    EventLoop* owner_loop_;                   ///< 所在的EventLoop
+    const int epollFd_;                       ///< epoll实例的文件描述符
+    ChannelMap fd_channel_map_;               ///< 存储所有fd:Channel的映射
+    std::vector<struct epoll_event> events_;  ///< 存储epoll_wait返回的事件
+
+   public:
     // 构造析构
     explicit Poller(EventLoop* loop);
     ~Poller();
@@ -39,10 +45,5 @@ class Poller : public base::noncopyable {
 
     // 填充EventLoop的活跃Channel列表
     void fillActiveChannels(int nfds, ChannelList& active_channels) const;
-
-    EventLoop* owner_loop_;                   ///< 所在的EventLoop
-    const int epollFd_;                       ///< epoll实例的文件描述符
-    ChannelMap fd_channel_map_;               ///< 存储所有fd:Channel的映射
-    std::vector<struct epoll_event> events_;  ///< 存储epoll_wait返回的事件
 };
 }  // namespace net::reactor

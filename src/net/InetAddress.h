@@ -7,6 +7,8 @@
 
 namespace net {
 class InetAddress {
+    struct sockaddr_in addr_ {};
+
    public:
     // 仅端口构造，可以指定是否本地回环
     explicit InetAddress(uint16_t port = 0,
@@ -31,8 +33,5 @@ class InetAddress {
     void setSockAddrInet(const struct sockaddr_in& addr) {
         addr_ = addr;
     }
-
-   private:
-    struct sockaddr_in addr_ {};
 };
 }  // namespace net

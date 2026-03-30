@@ -1,14 +1,11 @@
 #include "EventLoop.h"
 
 #include <cassert>
-#include <iostream>
 #include <memory>
 
 #include "Channel.h"
 #include "Poller.h"
-
-using std::cout;
-using std::endl;
+#include "base/LouisLog.h"
 
 namespace net::reactor {
 // 定义内部结构体
@@ -35,21 +32,21 @@ void EventLoop::loop() {
     impl_->looping = true;
     impl_->quit = false;
 
-    cout << "[EventLoop] loop() started" << endl << endl;
+    INFO("[EventLoop] loop() started.\n\n");
 
     while (!impl_->quit) {
         // 填充活跃的Channel列表
         poll(4000, impl_->active_channels);
         // 遍历活跃的Channel列表
         for (auto& channel : impl_->active_channels) {
-            cout << "[EventLoop] loop() handling event for fd " << channel->fd() << endl << endl;
+            INFO_F("[EventLoop] loop() handling event for fd %d.\n\n", channel->fd());
             channel->handleEvent();
         }
         // 清空活跃的Channel列表
         impl_->active_channels.clear();
     }
 
-    cout << "[EventLoop] loop() exited" << endl << endl;
+    INFO("[EventLoop] loop() exited.\n\n");
     impl_->looping = false;
 }
 

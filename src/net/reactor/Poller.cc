@@ -7,20 +7,16 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 
 #include "Channel.h"
 #include "EventLoop.h"
-
-using std::cerr;
-using std::cout;
-using std::endl;
+#include "base/LouisLog.h"
 
 namespace net::reactor {
 // 构造析构
 Poller::Poller(EventLoop* loop) : owner_loop_(loop), epollFd_(::epoll_create1(EPOLL_CLOEXEC)), events_(16) {
     if (epollFd_ == -1) {
-        cerr << "[Poller] Poller() failed to create epollfd: " << strerror(errno) << endl << endl;
+        FATAL_F("[Poller] Poller() failed to create epollfd: %s.\n\n", strerror(errno));
         // 无法创建epollfd，程序无法运行
         abort();
     }
@@ -36,33 +32,33 @@ Poller::~Poller() {
 
 // 调用epoll_wait，等待事件响应
 void Poller::poll(int timeout_ms, ChannelList& active_channels) {
-    cout << "[Poller] poll() called, timeout_ms = " << timeout_ms << endl << endl;
+    INFO_F("[Poller] poll() called, timeout_ms = %d.\n\n", timeout_ms);
     // 获取活跃Channel的个数
     int nfds = ::epoll_wait(epollFd_, events_.data(), events_.size(), timeout_ms);
     //*  保存错误码，避免不小心调用系统调用，errno被覆盖
     int savedErrno = errno;
 
     if (nfds > 0) {
-        cout << "[Poller] poll() returned " << nfds << " events" << endl << endl;
+        INFO_F("[Poller] poll() returned %d events.\n\n", nfds);
         // 填充活跃channel列表
         fillActiveChannels(nfds, active_channels);
 
         //* 如果活跃事件数量接近events_的大小，动态扩展events_向量
         if (static_cast<size_t>(nfds) == events_.size()) {
             events_.resize(events_.size() * 2);
-            cout << "[Poller] poll() expanded events_ vector to size " << events_.size() << endl << endl;
+            INFO_F("[Poller] poll() expanded events_ vector to size %ld.\n\n", events_.size());
         } else if (nfds == 0) {
-            cout << "[Poller] poll() timed out" << endl << endl;
+            INFO_F("[Poller] poll() timed out.\n\n");
         }
         // 处理错误
         else {
             if (savedErrno != EINTR) {
                 errno = savedErrno;
-                cerr << "[Poller] poll() failed: " << strerror(errno) << endl << endl;
+                ERROR_F("[Poller] poll() failed: %s.\n\n", strerror(errno));
             }
             //* 如果errno是EINTR，说明是信号导致的中断，不是错误
             else {
-                cout << "[Poller] poll() interrupted by signal" << endl << endl;
+                INFO_F("[Poller] poll() interrupted by signal.\n\n");
             }
         }
     }
@@ -70,7 +66,7 @@ void Poller::poll(int timeout_ms, ChannelList& active_channels) {
 
 // 更新Channel
 void Poller::updateChannel(Channel* channel) {
-    cout << "[Poller] updateChannel() fd: " << channel->fd() << " events: " << channel->events() << endl << endl;
+    INFO_F("[Poller] updateChannel() fd: %d events: %d.\n\n", channel->fd(), channel->events());
 
     // 获取fd
     int fd = channel->fd();
@@ -109,12 +105,12 @@ void Poller::updateChannel(Channel* channel) {
 
 // 移除Channel
 void Poller::removeChannel(Channel* channel) {
-    cout << "[Poller] removeChannel() called, fd = " << channel->fd() << endl << endl;
+    INFO_F("[Poller] removeChannel() called, fd = %d.\n\n", channel->fd());
     // 获取fd
     int fd = channel->fd();
     // 断言channel在map中存在
     assert(fd_channel_map_.find(fd) != fd_channel_map_.end());
-    assert(fd_channel_map_[fd] = channel);
+    assert(fd_channel_map_[fd] == channel);
 
     // 确保Channel没有注册任何事件
     if (!channel->isNoneEvent()) {
@@ -137,11 +133,9 @@ void Poller::addFd(int fd, uint32_t events) {
     event.events = events;
     event.data.fd = fd;
     if (::epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &event) < 0) {
-        cerr << "[Poller] addFd() failed to add fd " << fd << " to epollfd " << epollFd_
-             << " errno: " << strerror(errno) << endl
-             << endl;
+        ERROR_F("[Poller] addFd() failed to add fd %d to epollfd %d, errno: %s.\n\n", fd, epollFd_, strerror(errno));
     } else {
-        cout << "[Poller] addFd() success to add fd " << fd << " to epollfd " << epollFd_ << endl << endl;
+        INFO_F("[Poller] addFd() success to add fd %d to epollfd %d.\n\n", fd, epollFd_);
     }
 }
 
@@ -150,21 +144,17 @@ void Poller::modFd(int fd, uint32_t events) {
     event.events = events;
     event.data.fd = fd;
     if (::epoll_ctl(epollFd_, EPOLL_CTL_MOD, fd, &event) < 0) {
-        cerr << "[Poller] modFd() failed to mod fd " << fd << " to epollfd " << epollFd_
-             << " errno: " << strerror(errno) << endl
-             << endl;
+        ERROR_F("[Poller] modFd() failed to mod fd %d to epollfd %d, errno: %s.\n\n", fd, epollFd_, strerror(errno));
     } else {
-        cout << "[Poller] modFd() success to mod fd " << fd << " to epollfd " << epollFd_ << endl << endl;
+        INFO_F("[Poller] modFd() success to mod fd %d to epollfd %d.\n\n", fd, epollFd_);
     }
 }
 
 void Poller::delFd(int fd) {
     if (::epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, nullptr) < 0) {
-        cerr << "[Poller] delFd() failed to del fd " << fd << " from epollfd " << epollFd_
-             << " errno: " << strerror(errno) << endl
-             << endl;
+        ERROR_F("[Poller] delFd() failed to del fd %d from epollfd %d, errno: %s.\n\n", fd, epollFd_, strerror(errno));
     } else {
-        cout << "[Poller] delFd() success to del fd " << fd << " from epollfd " << epollFd_ << endl << endl;
+        INFO_F("[Poller] delFd() success to del fd %d from epollfd %d.\n\n", fd, epollFd_);
     }
 }
 

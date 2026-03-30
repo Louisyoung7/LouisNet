@@ -2,15 +2,11 @@
 
 #include <unistd.h>
 
-#include <iostream>
 #include <memory>
 
+#include "base/LouisLog.h"
 #include "net/Acceptor.h"
 #include "net/TcpConnection.h"
-
-using std::cerr;
-using std::cout;
-using std::endl;
 
 namespace net {
 // 构造函数
@@ -38,16 +34,15 @@ TcpServer::~TcpServer() {
 // 启动服务器
 // 让Acceptor实例开始监听新连接
 void TcpServer::start() {
-    cout << "[TcpServer] start() starting to listen on " << listenAddr_.toIpPort() << endl << endl;
+    INFO_F("[TcpServer] start() starting to listen on %s.\n\n", listenAddr_.toIpPort().c_str());
     acceptor_->listen();
 }
 
 // 处理新连接
 // 会被设置为Acceptor实例的新连接回调函数，在后续有新连接时被调用
 void TcpServer::onNewConnection(int sockfd, const net::InetAddress& peerAddr) {
-    cout << "[TcpServer] onNewConnection() new connection from " << peerAddr.toIpPort() << " sockfd = " << sockfd
-         << endl
-         << endl;
+    INFO_F("[TcpServer] onNewConnection() new connection from %s sockfd = %d.\n\n", peerAddr.toIpPort().c_str(),
+           sockfd);
 
     try {
         // 创建新TcpConnection实例
@@ -72,7 +67,7 @@ void TcpServer::onNewConnection(int sockfd, const net::InetAddress& peerAddr) {
         // 存储实例
         connections_[sockfd] = conn;
     } catch (const std::exception& e) {
-        cerr << "[TcpServer] onNewConnection() error: " << e.what() << endl << endl;
+        ERROR_F("[TcpServer] onNewConnection() error: %s.\n\n", e.what());
         // 发生错误时关闭socket
         ::close(sockfd);
     }
@@ -86,13 +81,13 @@ void TcpServer::onConnection(const TcpConnectionPtr& conn) {
             connectionCallback_(conn);
         }
     } catch (const std::exception& e) {
-        cerr << "[TcpServer] onConnection() error: " << e.what() << endl << endl;
+        ERROR_F("[TcpServer] onConnection() error: %s.\n\n", e.what());
     }
 }
 // 处理关闭事件
 // 在onNewConnection中被设置为新创建的TcpConnection的回调函数
 void TcpServer::onClose(const TcpConnectionPtr& conn) {
-    cout << "[TcpServer] onClose() connection " << conn->name() << " closed" << endl << endl;
+    INFO_F("[TcpServer] onClose() connection %s closed.\n\n", conn->name().c_str());
     // 从map中移除连接记录
     // 后续由TcpConnection自动管理生命周期
     connections_.erase(conn->fd());

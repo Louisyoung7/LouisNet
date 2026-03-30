@@ -19,7 +19,6 @@ class Channel;
 }  // namespace reactor
 
 class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public base::noncopyable {
-   public:
     // 智能指针类型定义
     using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 
@@ -32,6 +31,26 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
     // 连接状态枚举
     enum class StateE { kDisconnected, kConnecting, kConnected, kDisconnecting };
 
+    reactor::EventLoop* loop_;        ///< 所属的EventLoop
+    std::unique_ptr<Socket> socket_;  ///< 底层通信套接字
+    std::string name_;                ///< 连接名称
+    StateE state_;                    ///< 连接状态
+    int error_;                       ///< 错误状态
+
+    std::unique_ptr<reactor::Channel> channel_;  ///< 连接的Channel
+    const InetAddress localAddr_;                ///< 本端地址
+    const InetAddress peerAddr_;                 ///< 对端地址
+
+    // 回调函数
+    ConnectionCallback connectionCallback_;        ///< 连接建立/销毁回调
+    MessageCallback messageCallback_;              ///< 消息接收回调
+    WriteCompleteCallback writeCompleteCallback_;  ///< 写完成回调
+    CloseCallback closeCallback_;                  ///< 连接关闭回调
+
+    base::Buffer outputBuffer_;  ///< 发送缓冲区
+    base::Buffer inputBuffer_;   ///< 接收缓冲区
+
+   public:
     // 构造析构
     TcpConnection(reactor::EventLoop* loop, int sockfd, const InetAddress& localAddr, const InetAddress& peerAddr);
     ~TcpConnection();
@@ -114,24 +133,5 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
     void setState(StateE s) {
         state_ = s;
     }
-
-    reactor::EventLoop* loop_;        ///< 所属的EventLoop
-    std::unique_ptr<Socket> socket_;  ///< 底层通信套接字
-    std::string name_;                ///< 连接名称
-    StateE state_;                    ///< 连接状态
-    int error_;                       ///< 错误状态
-
-    std::unique_ptr<reactor::Channel> channel_;  ///< 连接的Channel
-    const InetAddress localAddr_;                ///< 本端地址
-    const InetAddress peerAddr_;                 ///< 对端地址
-
-    // 回调函数
-    ConnectionCallback connectionCallback_;        ///< 连接建立/销毁回调
-    MessageCallback messageCallback_;              ///< 消息接收回调
-    WriteCompleteCallback writeCompleteCallback_;  ///< 写完成回调
-    CloseCallback closeCallback_;                  ///< 连接关闭回调
-
-    base::Buffer outputBuffer_;  ///< 发送缓冲区
-    base::Buffer inputBuffer_;   ///< 接收缓冲区
 };
 }  // namespace net

@@ -11,6 +11,9 @@ class Channel;
 class Poller;
 
 class EventLoop : public base::noncopyable {
+    struct Impl;                  // 定义内部结构体
+    std::unique_ptr<Impl> impl_;  // 指向内部结构体实例的指针
+
    public:
     using Functor = std::function<void()>;
     using ChannelList = std::vector<Channel*>;
@@ -33,8 +36,5 @@ class EventLoop : public base::noncopyable {
    private:
     // 调用Poller的poll，填充活跃的Channel列表
     void poll(int timeout_ms, ChannelList& active_channels);
-
-    struct Impl;                  // 定义内部结构体
-    std::unique_ptr<Impl> impl_;  // 指向内部结构体实例的指针
 };
 }  // namespace net::reactor

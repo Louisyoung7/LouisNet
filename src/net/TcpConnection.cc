@@ -9,14 +9,10 @@
 #include <cstddef>
 #include <cstring>
 #include <exception>
-#include <iostream>
 #include <memory>
 #include <sstream>
 
-using std::cerr;
-using std::cout;
-using std::endl;
-
+#include "base/LouisLog.h"
 #include "reactor/Channel.h"
 
 namespace net {
@@ -45,13 +41,13 @@ TcpConnection::TcpConnection(reactor::EventLoop* loop, int sockfd, const InetAdd
     channel_->setCloseCallback([this]() { handleClose(); });
     channel_->setErrorCallback([this]() { handleError(); });
 
-    cout << "[TcpConnection] TcpConnection() created connection " << name_ << endl << endl;
+    INFO_F("[TcpConnection] TcpConnection() created connection %s.\n\n", name_.c_str());
 }
 TcpConnection::~TcpConnection() {
     // 析构函数调用时，确保连接已经断开
     assert(state_ == StateE::kDisconnected);
 
-    cout << "[TcpConnection] ~TcpConnecion() destroying connection " << name_ << endl << endl;
+    INFO_F("[TcpConnection] ~TcpConnecion() destroying connection %s.\n\n", name_.c_str());
 }
 
 // 连接建立，更新连接状态为kConnected，使能Channel的读事件，调用连接建立回调
@@ -66,7 +62,7 @@ void TcpConnection::connectionEstablished() {
         connectionCallback_(shared_from_this());
     }
 
-    cout << "[TcpConnection] connectionEstablished() connection " << name_ << " established" << endl << endl;
+    INFO_F("[TcpConnection] connectionEstablished() connection %s established.\n\n", name_.c_str());
 }
 
 // 连接关闭，更新连接状态为kDisconnected，关闭Channel的所有事件，并将Channel从所属的EventLoop中移除
@@ -82,9 +78,9 @@ void TcpConnection::connectionDestroyed() {
         // 从所属的EventLoop中移除
         channel_->remove();
 
-        cout << "[TcpConnection] connectionDestroyed() connection " << name_ << " destroyed" << endl << endl;
+        INFO_F("[TcpConnection] connectionDestroyed() connection %s destroyed.\n\n", name_.c_str());
     } catch (const std::exception& e) {
-        cerr << "[TcpConnection] connectionDestroyed() error: " << e.what() << endl << endl;
+        ERROR_F("[TcpConnection] connectionDestroyed() error: %s.\n\n", e.what());
     }
 
     // TcpConnection对象的真正销毁由智能指针管理，当引用计数归零，自动调用析构函数
@@ -111,7 +107,7 @@ void TcpConnection::handleRead() {
     else {
         // 更新errno
         errno = savedError;
-        cerr << "[TcpConnection] handleRead() error: " << strerror(errno) << endl << endl;
+        ERROR_F("[TcpConnection] handleRead() error: %s.\n\n", strerror(errno));
         // 处理错误事件
         handleError();
     }
@@ -145,7 +141,7 @@ void TcpConnection::handleWrite() {
         } else {
             // 向sockfd写入错误
             errno = savedError;
-            cerr << "[TcpConnection] handleWrite() error: " << strerror(errno) << endl << endl;
+            ERROR_F("[TcpConnection] handleWrite() error: %s.\n\n", strerror(errno));
             // 处理错误事件
             handleError();
         }
@@ -155,7 +151,7 @@ void TcpConnection::handleWrite() {
 void TcpConnection::handleClose() {
     assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
 
-    cout << "[TcpConnection] handleClose() connection " << name_ << " closing" << endl << endl;
+    INFO_F("[TcpConnection] handleClose() connection %s closing.\n\n", name_.c_str());
     setState(StateE::kDisconnected);
 
     // 创建一个shared_ptr来延长对象生命周期
@@ -194,9 +190,7 @@ void TcpConnection::handleError() {
     // 保存错误状态
     error_ = optval;
     errno = optval;
-    cerr << "[TcpConnection] handleError() connection " << name_ << " error: " << strerror(errno)
-         << " (errno: " << optval << ")" << endl
-         << endl;
+    ERROR_F("[TcpConnection] handleError() connection %s error: %s.\n\n", name_.c_str(), strerror(errno));
 
     // 处理关闭事件
     handleClose();
@@ -230,7 +224,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
 
     // 连接已关闭，放弃写入
     if (state_ == StateE::kDisconnected) {
-        cout << "[TcpConnection] sendInLoop() connection is disconnected, give up writing" << endl << endl;
+        INFO_F("[TcpConnection] sendInLoop() connection %s is disconnected, give up writing.\n\n", name_.c_str());
         return;
     }
 
@@ -249,7 +243,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
             // 写入错误，重置nwrote
             nwrote = 0;
             if (errno != EINTR) {
-                cerr << "[TcpConnection] sendInLoop() error: " << strerror(errno) << endl << endl;
+                ERROR_F("[TcpConnection] sendInLoop() connection %s error: %s.\n\n", name_.c_str(), strerror(errno));
                 if (errno == EPIPE || errno == ECONNRESET) {
                     // 更新savedError
                     savedError = errno;
