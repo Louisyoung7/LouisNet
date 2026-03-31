@@ -19,9 +19,11 @@ class Channel;
 }  // namespace reactor
 
 class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public base::noncopyable {
+   public:
     // 智能指针类型定义
     using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 
+   private:
     // 回调函数类型定义
     using ConnectionCallback = std::function<void(const TcpConnectionPtr&)>;
     using MessageCallback = std::function<void(const TcpConnectionPtr&, base::Buffer&)>;

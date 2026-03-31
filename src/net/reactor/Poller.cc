@@ -3,8 +3,6 @@
 #include <sys/epoll.h>
 
 #include <cassert>
-#include <cstddef>
-#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
@@ -30,25 +28,25 @@ Poller::~Poller() {
     ::close(epollFd_);
 }
 
-// 调用epoll_wait，等待事件响应
+// 调用epoll_wait，等待事件响应，填充活跃Channel列表active_channels
 void Poller::poll(int timeout_ms, ChannelList& active_channels) {
-    INFO_F("[Poller] poll() called, timeout_ms = %d.\n\n", timeout_ms);
+    DEBUG_F("[Poller] poll() called, timeout_ms = %d.\n\n", timeout_ms);
     // 获取活跃Channel的个数
     int nfds = ::epoll_wait(epollFd_, events_.data(), events_.size(), timeout_ms);
     //*  保存错误码，避免不小心调用系统调用，errno被覆盖
     int savedErrno = errno;
 
     if (nfds > 0) {
-        INFO_F("[Poller] poll() returned %d events.\n\n", nfds);
+        DEBUG_F("[Poller] poll() returned %d events.\n\n", nfds);
         // 填充活跃channel列表
         fillActiveChannels(nfds, active_channels);
 
         //* 如果活跃事件数量接近events_的大小，动态扩展events_向量
         if (static_cast<size_t>(nfds) == events_.size()) {
             events_.resize(events_.size() * 2);
-            INFO_F("[Poller] poll() expanded events_ vector to size %ld.\n\n", events_.size());
+            DEBUG_F("[Poller] poll() expanded events_ vector to size %ld.\n\n", events_.size());
         } else if (nfds == 0) {
-            INFO_F("[Poller] poll() timed out.\n\n");
+            DEBUG_F("[Poller] poll() timed out.\n\n");
         }
         // 处理错误
         else {
@@ -58,7 +56,7 @@ void Poller::poll(int timeout_ms, ChannelList& active_channels) {
             }
             //* 如果errno是EINTR，说明是信号导致的中断，不是错误
             else {
-                INFO_F("[Poller] poll() interrupted by signal.\n\n");
+                DEBUG_F("[Poller] poll() interrupted by signal.\n\n");
             }
         }
     }
@@ -66,7 +64,7 @@ void Poller::poll(int timeout_ms, ChannelList& active_channels) {
 
 // 更新Channel
 void Poller::updateChannel(Channel* channel) {
-    INFO_F("[Poller] updateChannel() fd: %d events: %d.\n\n", channel->fd(), channel->events());
+    DEBUG_F("[Poller] updateChannel() fd: %d events: %d.\n\n", channel->fd(), channel->events());
 
     // 获取fd
     int fd = channel->fd();
@@ -105,7 +103,7 @@ void Poller::updateChannel(Channel* channel) {
 
 // 移除Channel
 void Poller::removeChannel(Channel* channel) {
-    INFO_F("[Poller] removeChannel() called, fd = %d.\n\n", channel->fd());
+    DEBUG_F("[Poller] removeChannel() called, fd = %d.\n\n", channel->fd());
     // 获取fd
     int fd = channel->fd();
     // 断言channel在map中存在
@@ -122,31 +120,30 @@ void Poller::removeChannel(Channel* channel) {
     // 从epoll中取消注册fd
     delFd(fd);
     // 从map中删除
-    size_t n = fd_channel_map_.erase(fd);
-    assert(n == 1);
+    fd_channel_map_.erase(fd);
     // 更新channel状态
     channel->setIndex(Channel::kNew);
 }
 
-void Poller::addFd(int fd, uint32_t events) {
+void Poller::addFd(int fd, int events) {
     struct epoll_event event;
     event.events = events;
     event.data.fd = fd;
     if (::epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &event) < 0) {
         ERROR_F("[Poller] addFd() failed to add fd %d to epollfd %d, errno: %s.\n\n", fd, epollFd_, strerror(errno));
     } else {
-        INFO_F("[Poller] addFd() success to add fd %d to epollfd %d.\n\n", fd, epollFd_);
+        DEBUG_F("[Poller] addFd() success to add fd %d to epollfd %d.\n\n", fd, epollFd_);
     }
 }
 
-void Poller::modFd(int fd, uint32_t events) {
+void Poller::modFd(int fd, int events) {
     struct epoll_event event;
     event.events = events;
     event.data.fd = fd;
     if (::epoll_ctl(epollFd_, EPOLL_CTL_MOD, fd, &event) < 0) {
         ERROR_F("[Poller] modFd() failed to mod fd %d to epollfd %d, errno: %s.\n\n", fd, epollFd_, strerror(errno));
     } else {
-        INFO_F("[Poller] modFd() success to mod fd %d to epollfd %d.\n\n", fd, epollFd_);
+        DEBUG_F("[Poller] modFd() success to mod fd %d to epollfd %d.\n\n", fd, epollFd_);
     }
 }
 
@@ -154,7 +151,7 @@ void Poller::delFd(int fd) {
     if (::epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, nullptr) < 0) {
         ERROR_F("[Poller] delFd() failed to del fd %d from epollfd %d, errno: %s.\n\n", fd, epollFd_, strerror(errno));
     } else {
-        INFO_F("[Poller] delFd() success to del fd %d from epollfd %d.\n\n", fd, epollFd_);
+        DEBUG_F("[Poller] delFd() success to del fd %d from epollfd %d.\n\n", fd, epollFd_);
     }
 }
 

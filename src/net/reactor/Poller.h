@@ -14,6 +14,12 @@ namespace net::reactor {
 class Channel;
 class EventLoop;
 
+// Poller类
+// 1.封装epoll_wait等epoll相关调用
+// 2.管理所有注册在epoll中的fd:Channel的映射
+// 3.等待事件响应，填充活跃Channel列表active_channels，包含所有实际发生的事件
+// 4.提供Channel的添加、修改、删除接口
+
 class Poller : public base::noncopyable {
     using ChannelList = std::vector<Channel*>;
     using ChannelMap = std::map<int, Channel*>;
@@ -39,8 +45,8 @@ class Poller : public base::noncopyable {
 
    private:
     // 封装epoll的添加、修改、删除事件
-    void addFd(int fd, uint32_t events);
-    void modFd(int fd, uint32_t events);
+    void addFd(int fd, int events);
+    void modFd(int fd, int events);
     void delFd(int fd);
 
     // 填充EventLoop的活跃Channel列表

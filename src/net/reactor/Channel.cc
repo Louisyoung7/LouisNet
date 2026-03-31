@@ -12,12 +12,12 @@ Channel::~Channel() {
     if (index_ != kNew) {
         // 确保Channel没有注册任何事件
         disableAll();
-        loop_->removeChannel(this);
+        remove();
     }
 }
 
 void Channel::handleEvent() {
-    // 处理事件
+    // 执行实际发生的事件回调
     if (revents_ & kReadEvent) {
         if (readCallback_) {
             readCallback_();

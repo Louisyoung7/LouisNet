@@ -41,13 +41,13 @@ TcpConnection::TcpConnection(reactor::EventLoop* loop, int sockfd, const InetAdd
     channel_->setCloseCallback([this]() { handleClose(); });
     channel_->setErrorCallback([this]() { handleError(); });
 
-    INFO_F("[TcpConnection] TcpConnection() created connection %s.\n\n", name_.c_str());
+    DEBUG_F("[TcpConnection] TcpConnection() created connection %s.\n\n", name_.c_str());
 }
 TcpConnection::~TcpConnection() {
     // 析构函数调用时，确保连接已经断开
     assert(state_ == StateE::kDisconnected);
 
-    INFO_F("[TcpConnection] ~TcpConnecion() destroying connection %s.\n\n", name_.c_str());
+    DEBUG_F("[TcpConnection] ~TcpConnecion() destroying connection %s.\n\n", name_.c_str());
 }
 
 // 连接建立，更新连接状态为kConnected，使能Channel的读事件，调用连接建立回调
@@ -62,7 +62,7 @@ void TcpConnection::connectionEstablished() {
         connectionCallback_(shared_from_this());
     }
 
-    INFO_F("[TcpConnection] connectionEstablished() connection %s established.\n\n", name_.c_str());
+    DEBUG_F("[TcpConnection] connectionEstablished() connection %s established.\n\n", name_.c_str());
 }
 
 // 连接关闭，更新连接状态为kDisconnected，关闭Channel的所有事件，并将Channel从所属的EventLoop中移除
@@ -78,7 +78,7 @@ void TcpConnection::connectionDestroyed() {
         // 从所属的EventLoop中移除
         channel_->remove();
 
-        INFO_F("[TcpConnection] connectionDestroyed() connection %s destroyed.\n\n", name_.c_str());
+        DEBUG_F("[TcpConnection] connectionDestroyed() connection %s destroyed.\n\n", name_.c_str());
     } catch (const std::exception& e) {
         ERROR_F("[TcpConnection] connectionDestroyed() error: %s.\n\n", e.what());
     }
@@ -151,7 +151,7 @@ void TcpConnection::handleWrite() {
 void TcpConnection::handleClose() {
     assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
 
-    INFO_F("[TcpConnection] handleClose() connection %s closing.\n\n", name_.c_str());
+    DEBUG_F("[TcpConnection] handleClose() connection %s closing.\n\n", name_.c_str());
     setState(StateE::kDisconnected);
 
     // 创建一个shared_ptr来延长对象生命周期
@@ -224,7 +224,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
 
     // 连接已关闭，放弃写入
     if (state_ == StateE::kDisconnected) {
-        INFO_F("[TcpConnection] sendInLoop() connection %s is disconnected, give up writing.\n\n", name_.c_str());
+        DEBUG_F("[TcpConnection] sendInLoop() connection %s is disconnected, give up writing.\n\n", name_.c_str());
         return;
     }
 

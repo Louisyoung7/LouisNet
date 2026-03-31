@@ -10,6 +10,12 @@ namespace net::reactor {
 class Channel;
 class Poller;
 
+// EventLoop类
+// 1.管理EventLoop内部的Poller实例
+// 2.管理活跃的Channel列表
+// 3.提供事件循环的启动和退出接口
+// 4.提供Channel的添加和移除接口
+
 class EventLoop : public base::noncopyable {
     struct Impl;                  // 定义内部结构体
     std::unique_ptr<Impl> impl_;  // 指向内部结构体实例的指针

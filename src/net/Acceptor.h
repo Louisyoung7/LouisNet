@@ -15,6 +15,11 @@ class Channel;
 
 class InetAddress;
 
+// Acceptor类
+// 1.创建监听socket和绑定IP and Port
+// 2.处理新连接事件
+// 3.新连接到来时，调用回调函数处理新连接的fd和peerAddr
+
 class Acceptor : public base::noncopyable {
     using NewConnectionCallback = std::function<void(int sockfd, const InetAddress& peerAddr)>;
 
@@ -29,7 +34,7 @@ class Acceptor : public base::noncopyable {
     Acceptor(reactor::EventLoop* loop, const InetAddress& listenAddr, bool reusePort);
     ~Acceptor();
 
-    // 设置新连接回调
+    // 设置新连接回调函数
     void setNewConnectionCallback(NewConnectionCallback callback) {
         newConnectionCallback_ = std::move(callback);
     }

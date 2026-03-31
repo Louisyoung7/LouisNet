@@ -32,21 +32,21 @@ void EventLoop::loop() {
     impl_->looping = true;
     impl_->quit = false;
 
-    INFO("[EventLoop] loop() started.\n\n");
+    DEBUG("[EventLoop] loop() started.\n\n");
 
     while (!impl_->quit) {
         // 填充活跃的Channel列表
         poll(4000, impl_->active_channels);
         // 遍历活跃的Channel列表
         for (auto& channel : impl_->active_channels) {
-            INFO_F("[EventLoop] loop() handling event for fd %d.\n\n", channel->fd());
+            DEBUG_F("[EventLoop] loop() handling event for fd %d.\n\n", channel->fd());
             channel->handleEvent();
         }
         // 清空活跃的Channel列表
         impl_->active_channels.clear();
     }
 
-    INFO("[EventLoop] loop() exited.\n\n");
+    DEBUG("[EventLoop] loop() exited.\n\n");
     impl_->looping = false;
 }
 

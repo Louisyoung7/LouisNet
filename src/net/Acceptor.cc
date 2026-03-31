@@ -30,26 +30,32 @@ Acceptor::Acceptor(reactor::EventLoop* loop, const InetAddress& listenAddr, bool
       listening_(false),
       acceptSocket_(std::make_unique<Socket>(createNonblockingSocket())),
       acceptChannel_(std::make_unique<reactor::Channel>(loop, acceptSocket_->fd())) {
+    // 绑定IP and Port
     acceptSocket_->bindAddress(listenAddr);
+    // 设置复用地址和端口，设置Nagle算法
     acceptSocket_->setReuseAddr(true);
     acceptSocket_->setReusePort(reusePort);
     acceptSocket_->setTcpNoDelay(true);
+
     // 设置Channel的读回调，处理新连接
     acceptChannel_->setReadCallback([this]() { handleRead(); });
-    INFO_F("[Acceptor] Acceptor() created with listenFd_ = %d\n\n", acceptSocket_->fd());
+
+    DEBUG_F("[Acceptor] Acceptor() created with listenFd_ = %d\n\n", acceptSocket_->fd());
 }
 Acceptor::~Acceptor() {
+    DEBUG_F("[Acceptor] ~Acceptor() closing listenFd_ = %d\n\n", acceptSocket_->fd());
     // 关闭监听Channel
     acceptChannel_->disableAll();
     acceptChannel_->remove();
-    INFO_F("[Acceptor] ~Acceptor() closing listenFd_ = %d\n\n", acceptSocket_->fd());
 }
 
 // 开始监听
 void Acceptor::listen() {
     assert(!listening_);
     acceptSocket_->listen();
+    acceptChannel_->enableRead();
     listening_ = true;
+    DEBUG_F("[Acceptor] listen() listenFd_ = %d\n\n", acceptSocket_->fd());
 }
 
 // 处理监听的socket上的读事件（新连接）
@@ -58,8 +64,8 @@ void Acceptor::handleRead() {
     InetAddress peerAddr;
     int connfd = acceptSocket_->accept(peerAddr);
     if (connfd > 0) {
-        INFO_F("[Acceptor] handleRead() accepted connection with fd = %d, from %s\n\n", connfd,
-               peerAddr.toIpPort().c_str());
+        DEBUG_F("[Acceptor] handleRead() accepted connection with fd = %d, from %s\n\n", connfd,
+                peerAddr.toIpPort().c_str());
 
         // 调用新连接回调函数
         if (newConnectionCallback_) {
@@ -70,9 +76,9 @@ void Acceptor::handleRead() {
         }
     } else {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            INFO("[Acceptor] handleRead() no more connections\n\n");
+            DEBUG_F("[Acceptor] handleRead() no more connections\n\n");
         } else {
-            INFO_F("[Acceptor] handleRead() accept() failed with errno = %s\n\n", strerror(errno));
+            ERROR_F("[Acceptor] handleRead() accept() failed with errno = %s\n\n", strerror(errno));
         }
     }
 }
