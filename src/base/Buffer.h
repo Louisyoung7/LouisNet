@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sys/types.h>
-
 #include <algorithm>
 #include <cassert>
 #include <cstddef>

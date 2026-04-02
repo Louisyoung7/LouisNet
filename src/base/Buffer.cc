@@ -1,7 +1,7 @@
 #include "Buffer.h"
 
-#include <sys/types.h>
 #include <sys/uio.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cassert>
@@ -45,11 +45,7 @@ ssize_t Buffer::readFd(int fd, int* savedErrno) {
 ssize_t Buffer::writeFd(int fd, int* savedErrno) {
     const size_t readable = readableBytes();
 
-    struct iovec vec[1];
-    vec[0].iov_base = peek();
-    vec[0].iov_len = readable;
-
-    const ssize_t n = ::writev(fd, vec, 1);
+    const ssize_t n = ::write(fd, peek(), readable);
 
     if (n < 0) {
         // 出错，保存errno
