@@ -3,7 +3,8 @@
 #include "EventLoop.h"
 #include "Poller.h"
 
-namespace net::reactor {
+using namespace net::reactor;
+
 // 构造析构
 Channel::Channel(EventLoop* loop, int fd)
     : loop_(loop), fd_(fd), events_(kNoneEvent), revents_(kNoneEvent), index_(kNew) {
@@ -49,4 +50,3 @@ void Channel::remove() {
 void Channel::update() {
     loop_->updateChannel(this);
 }
-}  // namespace net::reactor

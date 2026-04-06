@@ -10,7 +10,8 @@
 #include "EventLoop.h"
 #include "base/LouisLog.h"
 
-namespace net::reactor {
+using namespace net::reactor;
+
 // 构造析构
 Poller::Poller(EventLoop* loop) : owner_loop_(loop), epollFd_(::epoll_create1(EPOLL_CLOEXEC)), events_(16) {
     if (epollFd_ == -1) {
@@ -176,4 +177,3 @@ void Poller::fillActiveChannels(int nfds, ChannelList& active_channels) const {
         }
     }
 }
-}  // namespace net::reactor

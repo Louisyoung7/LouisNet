@@ -33,18 +33,19 @@ struct EventLoop::Impl {
     std::atomic_bool quit{false};                    // 是否停止事件循环
     std::vector<Functor> tasks;                      // 任务列表
     std::mutex mutex;                                // 互斥锁，保证任务列表线程安全
-    std::thread::id tid;                             // 线程id
+    std::thread::id tid;                             // 记录EventLoop所属线程ID
     std::atomic_bool callingPendingFunctors{false};  // 是否正在处理任务列表
     int eventfd;                                     // 事件通知描述符
     std::unique_ptr<Channel> eventChannel;           // 事件通知Channel
 
     // 构造函数
-    explicit Impl(EventLoop* loop) : poller(std::make_unique<Poller>(loop)), eventfd(createEventfd()) {
+    explicit Impl(EventLoop* loop)
+        : poller(std::make_unique<Poller>(loop)),tid(std::this_thread::get_id()), eventfd(createEventfd()), eventChannel(std::make_unique<Channel>(loop, eventfd)) {
     }
 };
 
 // 构造析构
-EventLoop::EventLoop() : impl_(std::make_unique<Impl>(this)) {
+EventLoop::EventLoop() : impl_(std::make_unique<Impl>(this)){
 }
 EventLoop::~EventLoop() = default;
 
@@ -111,7 +112,25 @@ void EventLoop::queueInLoop(Functor cb) {
 
 // 判断是否在loop线程
 bool EventLoop::isInLoopThread() {
-    return std::this_thread::get_id() == impl_->tid;
+    return impl_->tid == std::this_thread::get_id();
+}
+
+// 唤醒loop线程
+void EventLoop::wakeup() {
+    // 向注册到EventLoop的eventfd写入数据，唤醒对应EventLoop
+    uint64_t one{1};
+    ssize_t n = ::write(impl_->eventfd, &one, sizeof(one));
+    if (n != sizeof(one)) {
+        ERROR_F("[EventLoop] wakeup() writes %lu bytes instead of 8.\n\n", n);
+    }
+}
+
+void EventLoop::handleRead() {
+    uint64_t one = 1;
+    ssize_t n = read(impl_->eventfd, &one, sizeof(one));
+    if (n != sizeof(one)) {
+        ERROR_F("[EventLoop] handleRead() reads %lu bytes instead of 8.\n\n", n);
+    }
 }
 
 // 调用Poller的poll
@@ -130,19 +149,9 @@ void EventLoop::doPendingFunctors() {
         tasks.swap(impl_->tasks);
     }
 
-    for (auto& task : tasks) {
+    for (const auto& task : tasks) {
         task();
     }
 
     impl_->callingPendingFunctors = false;
-}
-
-// 唤醒loop线程
-void EventLoop::wakeup() {
-    // 向注册到EventLoop的eventfd写入数据，唤醒对应EventLoop
-    uint64_t one{1};
-    ssize_t n = ::write(impl_->eventfd, &one, sizeof(one));
-    if (n != sizeof(one)) {
-        ERROR_F("[EventLoop] wakeup() writes %lu bytes instead of 8.\n\n", n);
-    }
 }

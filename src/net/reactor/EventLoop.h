@@ -1,5 +1,8 @@
 #pragma once
 
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <functional>
 #include <memory>
 #include <vector>
@@ -48,6 +51,9 @@ class EventLoop : public base::noncopyable {
     // 判断是否在loop线程
     bool isInLoopThread();
 
+    // 唤醒loop线程
+    void wakeup();
+
    private:
     // 调用Poller的poll，填充活跃的Channel列表
     void poll(int timeout_ms, ChannelList& active_channels);
@@ -55,7 +61,7 @@ class EventLoop : public base::noncopyable {
     // 执行待处理任务
     void doPendingFunctors();
 
-    // 唤醒loop线程
-    void wakeup();
+    //
+    void handleRead();
 };
 }  // namespace net::reactor
