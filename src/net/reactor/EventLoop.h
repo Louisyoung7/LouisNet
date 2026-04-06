@@ -39,8 +39,23 @@ class EventLoop : public base::noncopyable {
     // 移除Channel
     void removeChannel(Channel* channel);
 
+    // 确保回调在loop线程执行
+    void runInLoop(Functor cb);
+
+    // 将回调放入任务队列，并唤醒loop线程
+    void queueInLoop(Functor cb);
+
+    // 判断是否在loop线程
+    bool isInLoopThread();
+
    private:
     // 调用Poller的poll，填充活跃的Channel列表
     void poll(int timeout_ms, ChannelList& active_channels);
+
+    // 执行待处理任务
+    void doPendingFunctors();
+
+    // 唤醒loop线程
+    void wakeup();
 };
 }  // namespace net::reactor

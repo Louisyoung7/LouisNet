@@ -15,14 +15,15 @@
 #include "base/LouisLog.h"
 #include "reactor/Channel.h"
 
-namespace net {
-TcpConnection::TcpConnection(reactor::EventLoop* loop, int sockfd, const InetAddress& localAddr,
-                             const InetAddress& peerAddr)
+using namespace net;
+using namespace net::reactor;
+
+TcpConnection::TcpConnection(EventLoop* loop, int sockfd, const InetAddress& localAddr, const InetAddress& peerAddr)
     : loop_(loop),
       socket_(std::make_unique<Socket>(sockfd)),
       state_(StateE::kConnecting),
       error_(0),
-      channel_(std::make_unique<reactor::Channel>(loop, sockfd)),
+      channel_(std::make_unique<Channel>(loop, sockfd)),
       localAddr_(localAddr),
       peerAddr_(peerAddr) {
     // 生成连接名称
@@ -295,4 +296,3 @@ void TcpConnection::forceCloseInLoop() {
         handleClose();
     }
 }
-}  // namespace net

@@ -1,22 +1,45 @@
 #include "EventLoop.h"
 
+#include <sys/eventfd.h>
+#include <unistd.h>
+
+#include <atomic>
 #include <cassert>
 #include <memory>
+#include <mutex>
+#include <thread>
 
 #include "Channel.h"
 #include "Poller.h"
 #include "base/LouisLog.h"
 
-namespace net::reactor {
+using namespace net::reactor;
+
+// 创建eventfd
+static int createEventfd() {
+    int eventfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if (eventfd < 0) {
+        FATAL_F("%s-%s-%d createEventfd() failed to create eventfd: %s\n\n", __FILE__, __func__, __LINE__,
+                strerror(errno));
+    }
+    return eventfd;
+}
+
 // 定义内部结构体
 struct EventLoop::Impl {
-    std::unique_ptr<Poller> poller;  // 指向EventLoop内部的Poller实例
-    ChannelList active_channels;     // 活跃Channel列表
-    bool looping = false;            // 是否正在循环
-    bool quit = false;               // 是否停止事件循环
+    std::unique_ptr<Poller> poller;                  // 指向EventLoop内部的Poller实例
+    ChannelList active_channels;                     // 活跃Channel列表
+    std::atomic_bool looping{false};                 // 是否正在循环
+    std::atomic_bool quit{false};                    // 是否停止事件循环
+    std::vector<Functor> tasks;                      // 任务列表
+    std::mutex mutex;                                // 互斥锁，保证任务列表线程安全
+    std::thread::id tid;                             // 线程id
+    std::atomic_bool callingPendingFunctors{false};  // 是否正在处理任务列表
+    int eventfd;                                     // 事件通知描述符
+    std::unique_ptr<Channel> eventChannel;           // 事件通知Channel
 
     // 构造函数
-    explicit Impl(EventLoop* loop) : poller(std::make_unique<Poller>(loop)) {
+    explicit Impl(EventLoop* loop) : poller(std::make_unique<Poller>(loop)), eventfd(createEventfd()) {
     }
 };
 
@@ -65,8 +88,61 @@ void EventLoop::removeChannel(Channel* channel) {
     impl_->poller->removeChannel(channel);
 }
 
+// 确保回调在loop线程执行
+void EventLoop::runInLoop(Functor cb) {
+    if (isInLoopThread()) {
+        cb();
+    } else {
+        queueInLoop(cb);
+    }
+}
+
+// 将回调放入任务队列，并唤醒loop线程
+void EventLoop::queueInLoop(Functor cb) {
+    {
+        std::lock_guard<std::mutex> lock(impl_->mutex);
+        impl_->tasks.emplace_back(cb);
+    }
+
+    if (!isInLoopThread() || impl_->callingPendingFunctors) {
+        wakeup();
+    }
+}
+
+// 判断是否在loop线程
+bool EventLoop::isInLoopThread() {
+    return std::this_thread::get_id() == impl_->tid;
+}
+
 // 调用Poller的poll
 void EventLoop::poll(int timeout_ms, ChannelList& active_channels) {
     impl_->poller->poll(timeout_ms, active_channels);
 }
-}  // namespace net::reactor
+
+// 执行待处理任务
+void EventLoop::doPendingFunctors() {
+    impl_->callingPendingFunctors = true;
+
+    std::vector<Functor> tasks;
+
+    {
+        std::lock_guard<std::mutex> lock(impl_->mutex);
+        tasks.swap(impl_->tasks);
+    }
+
+    for (auto& task : tasks) {
+        task();
+    }
+
+    impl_->callingPendingFunctors = false;
+}
+
+// 唤醒loop线程
+void EventLoop::wakeup() {
+    // 向注册到EventLoop的eventfd写入数据，唤醒对应EventLoop
+    uint64_t one{1};
+    ssize_t n = ::write(impl_->eventfd, &one, sizeof(one));
+    if (n != sizeof(one)) {
+        ERROR_F("[EventLoop] wakeup() writes %lu bytes instead of 8.\n\n", n);
+    }
+}
