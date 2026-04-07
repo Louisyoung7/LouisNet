@@ -3,14 +3,14 @@
 #include <atomic>
 #include <condition_variable>
 #include <functional>
+#include <future>
+#include <memory>
 #include <mutex>
 #include <queue>
+#include <stdexcept>
 #include <thread>
 #include <type_traits>
 #include <vector>
-#include <future>
-#include <memory>
-#include <stdexcept>
 
 #include "noncopyable.h"
 
@@ -20,10 +20,10 @@ class ThreadPool : public noncopyable {
     std::queue<std::function<void()>> tasks_;
     std::mutex mutex_;
     std::condition_variable cv_;
-    std::atomic<bool> stop_;
+    std::atomic_bool stop_{true};
 
    public:
-    ThreadPool(size_t numThreads) {
+    ThreadPool(size_t numThreads) : stop_(false) {
         for (size_t i = 0; i < numThreads; ++i) {
             workers_.emplace_back([this]() {
                 while (true) {
@@ -51,7 +51,7 @@ class ThreadPool : public noncopyable {
 
     ~ThreadPool() {
         stop_ = true;
-        // 通知所有等待线程
+        // 通知所有等待线程停止
         cv_.notify_all();
 
         for (auto& worker : workers_) {
@@ -62,17 +62,17 @@ class ThreadPool : public noncopyable {
     }
 
     template <typename Func, typename... Args>
-    auto submit(Func f, Args ... args) -> std::future<std::invoke_result_t<Func, Args...>> {
+    auto submit(Func&& f, Args&&... args) -> std::future<std::invoke_result_t<Func, Args...>> {
         using ReturnType = std::invoke_result_t<Func, Args...>;
 
         // 包装任务
         // packaged_task不支持拷贝，而任务需要在多个地方流转（Lambda表达式、任务队列、执行线程等）
         // 共享指针保证任务可拷贝，同时正确管理生命周期
-        auto task = std::make_shared<std::packaged_task<ReturnType>>(
-            std::bind(std::forward<Func>(f), std::forward<Args...>(args...)));
-        
+        auto task = std::make_shared<std::packaged_task<ReturnType()>>(
+            std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
+
         // 获取future对象
-        auto result = task->get_future();
+        std::future<ReturnType> result = task->get_future();
 
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -83,7 +83,7 @@ class ThreadPool : public noncopyable {
             }
 
             // 将task共享指针捕获并包装成Lambda表达式
-            tasks_.emplace([task](){(*task)();});
+            tasks_.emplace([task]() { (*task)(); });
         }
 
         // 通知一个线程
