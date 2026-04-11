@@ -76,6 +76,9 @@ void EventLoop::loop() {
         }
         // 清空活跃的Channel列表
         impl_->activeChannels.clear();
+
+        // 执行待处理任务
+        doPendingFunctors();
     }
 
     DEBUG("[EventLoop] loop() exited.\n\n");

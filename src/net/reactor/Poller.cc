@@ -42,12 +42,12 @@ void Poller::poll(int timeoutMs, ChannelList& activeChannels) {
         if (static_cast<size_t>(nfds) == events_.size()) {
             events_.resize(events_.size() * 2);
             DEBUG_F("[Poller] poll() expanded events_ vector to size %ld.\n\n", events_.size());
-        } else if (nfds == 0) {
-            DEBUG_F("[Poller] poll() timed out.\n\n");
-        } else {
-            errno = savedErrno;
-            ERROR_F("[Poller] poll() failed: %s.\n\n", strerror(errno));
         }
+    } else if (nfds == 0) {
+        DEBUG_F("[Poller] poll() timed out.\n\n");
+    } else {
+        errno = savedErrno;
+        ERROR_F("[Poller] poll() failed: %s.\n\n", strerror(errno));
     }
 }
 

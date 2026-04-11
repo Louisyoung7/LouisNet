@@ -12,6 +12,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "LouisLog.h"
 #include "noncopyable.h"
 
 namespace base {
@@ -88,6 +89,8 @@ class ThreadPool : public noncopyable {
 
         // 通知一个线程
         cv_.notify_one();
+
+        DEBUG("[ThreadPool] submit() added task to threadPool.\n\n");
 
         return result;
     }

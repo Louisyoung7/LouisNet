@@ -1,8 +1,8 @@
 #include "EchoServer.h"
 
+#include <chrono>
 #include <memory>
 #include <string>
-#include <chrono>
 
 #include "base/LouisLog.h"
 
@@ -57,7 +57,16 @@ void EchoServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
         threadPool_->submit([conn, message]() {
             // 模拟耗时操作，如数据库查询、文件写入等
             std::this_thread::sleep_for(std::chrono::seconds(1));
-            conn->getLoop()->runInLoop([conn, message]() { conn->send(message); });
+            conn->getLoop()->runInLoop([conn, message]() {
+                if (conn->connected()) {  // 发送前检查连接状态
+                    conn->send(message);
+                    DEBUG_F("[EchoServer] onMessage() connection %s sent %ld bytes.\n\n",
+                           conn->name().c_str(), message.size());
+                } else {
+                    DEBUG_F("[EchoServer] onMessage() connection %s disconnected, skip sending.\n\n",
+                           conn->name().c_str());
+                }
+            });
         });
     } catch (const std::exception& e) {
         ERROR_F("[EchoServer] onMessage() error: %s.\n\n", e.what());

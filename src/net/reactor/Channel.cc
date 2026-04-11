@@ -12,7 +12,7 @@ Channel::Channel(EventLoop* loop, int fd)
     : loop_(loop), fd_(fd), events_(kNoneEvent), revents_(kNoneEvent), index_(kNew) {
 }
 Channel::~Channel() {
-    assert(index_ == kAdded || index_ == kDeleted);
+    assert(index_ == kNew);
     // 取消关注所有事件
     disableAll();
     remove();
