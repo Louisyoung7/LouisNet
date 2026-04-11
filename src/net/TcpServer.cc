@@ -8,18 +8,21 @@
 #include "net/Acceptor.h"
 #include "net/TcpConnection.h"
 
-namespace net {
+using namespace net;
+using namespace net::reactor;
+using namespace base;
+
 // 构造函数
 // 初始化TcpServer，并设置Acceptor实例的新连接回调函数
-TcpServer::TcpServer(reactor::EventLoop* loop, const net::InetAddress& listenAddr)
+TcpServer::TcpServer(EventLoop* loop, const InetAddress& listenAddr)
     : loop_(loop),
       listenAddr_(listenAddr),
       name_("TcpServer@" + listenAddr.toIpPort()),
-      acceptor_(std::make_unique<net::Acceptor>(loop, listenAddr, true)) {
+      acceptor_(std::make_unique<Acceptor>(loop, listenAddr, true)) {
     // 设置Acceptor实例的新连接回调函数
     // 新连接回调函数需要Acceptor获取的通信套接字和对端地址作为参数
     acceptor_->setNewConnectionCallback(
-        [this](int sockfd, const net::InetAddress& peerAddr) { onNewConnection(sockfd, peerAddr); });
+        [this](int sockfd, const InetAddress& peerAddr) { onNewConnection(sockfd, peerAddr); });
 }
 
 // 析构函数
@@ -40,18 +43,18 @@ void TcpServer::start() {
 
 // 处理新连接
 // 会被设置为Acceptor实例的新连接回调函数，在后续有新连接时被调用
-void TcpServer::onNewConnection(int sockfd, const net::InetAddress& peerAddr) {
+void TcpServer::onNewConnection(int sockfd, const InetAddress& peerAddr) {
     INFO_F("[TcpServer] onNewConnection() new connection from %s sockfd = %d.\n\n", peerAddr.toIpPort().c_str(),
            sockfd);
 
     try {
         // 创建新TcpConnection实例
-        TcpConnectionPtr conn = std::make_shared<net::TcpConnection>(loop_, sockfd, listenAddr_, peerAddr);
+        TcpConnectionPtr conn = std::make_shared<TcpConnection>(loop_, sockfd, listenAddr_, peerAddr);
         // 设置连接回调
         conn->setConnectionCallback([this](const TcpConnectionPtr& conn) { onConnection(conn); });
         // 设置消息接收回调
         conn->setMessageCallback(
-            [this](const TcpConnectionPtr& conn, base::Buffer& buffer) { messageCallback_(conn, buffer); });
+            [this](const TcpConnectionPtr& conn, Buffer& buffer) { messageCallback_(conn, buffer); });
         // 设置写完成回调
         conn->setWriteCompleteCallback([this](const TcpConnectionPtr& conn) {
             if (writeCompleteCallback_) {
@@ -92,4 +95,3 @@ void TcpServer::onClose(const TcpConnectionPtr& conn) {
     // 后续由TcpConnection自动管理生命周期
     connections_.erase(conn->fd());
 }
-}  // namespace net

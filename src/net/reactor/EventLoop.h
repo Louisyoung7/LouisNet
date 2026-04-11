@@ -56,7 +56,7 @@ class EventLoop : public base::noncopyable {
 
    private:
     // 调用Poller的poll，填充活跃的Channel列表
-    void poll(int timeout_ms, ChannelList& active_channels);
+    void poll(int timeoutMs, ChannelList& activeChannels);
 
     // 执行待处理任务
     void doPendingFunctors();

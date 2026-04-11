@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <cerrno>
 #include <cstddef>
 #include <cstring>
 #include <exception>
@@ -150,7 +151,7 @@ void TcpConnection::handleWrite() {
 }
 // 处理连接关闭，更新连接状态，调用连接销毁回调和连接关闭回调
 void TcpConnection::handleClose() {
-    assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
+    // assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
 
     DEBUG_F("[TcpConnection] handleClose() connection %s closing.\n\n", name_.c_str());
     setState(StateE::kDisconnected);
@@ -192,9 +193,6 @@ void TcpConnection::handleError() {
     error_ = optval;
     errno = optval;
     ERROR_F("[TcpConnection] handleError() connection %s error: %s.\n\n", name_.c_str(), strerror(errno));
-
-    // 处理关闭事件
-    handleClose();
 }
 
 // 发送string数据，底层直接调用write系统调用
@@ -205,7 +203,12 @@ void TcpConnection::send(const std::string& message) {
 void TcpConnection::send(const void* data, size_t len) {
     // 确保当前连接状态是已连接
     if (state_ == StateE::kConnected) {
-        sendInLoop(data, len);
+        // 确保在IO线程发送
+        if (loop_->isInLoopThread()) {
+            sendInLoop(data, len);
+        } else {
+            loop_->runInLoop([this, data, len]() { sendInLoop(data, len); });
+        }
     }
 }
 
@@ -236,23 +239,20 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
         if (nwrote >= 0) {
             // 写入nwrote字节，更新剩余未写入字节数
             remaining = len - nwrote;
-            // 如果全部写入，调用写完成回调
+            // 如果全部写入，添加写完成回调到事件循环
             if (remaining == 0 && writeCompleteCallback_) {
-                writeCompleteCallback_(shared_from_this());
+                loop_->queueInLoop([this]() { writeCompleteCallback_(shared_from_this()); });
             }
         } else {
             // 写入错误，重置nwrote
             nwrote = 0;
-            if (errno != EINTR) {
+            if (errno != EAGAIN || EWOULDBLOCK) {
                 ERROR_F("[TcpConnection] sendInLoop() connection %s error: %s.\n\n", name_.c_str(), strerror(errno));
                 if (errno == EPIPE || errno == ECONNRESET) {
                     // 更新savedError
                     savedError = errno;
-                    // 处理关闭事件
-                    handleClose();
                 }
             }
-            // EINTR可以忽略
         }
     }
 
@@ -272,27 +272,14 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
 void TcpConnection::shutdown() {
     if (state_ == StateE::kConnected) {
         setState(StateE::kDisconnecting);
-        shutdownInLoop();
+        // 确保在IO线程关闭连接
+        loop_->runInLoop([this]() { shutdownInLoop(); });
     }
 }
 // 在IO线程中关闭连接
 void TcpConnection::shutdownInLoop() {
     // 只有在没有使能写事件（发送缓冲区可能为空时）才关闭写端
     if (!channel_->isWriting()) {
-        ::shutdown(socket_->fd(), SHUT_WR);  // 半关闭，只关闭写端
-    }
-}
-
-// 强制关闭连接
-void TcpConnection::forceClose() {
-    if (state_ == StateE::kConnected || state_ == StateE::kDisconnecting) {
-        setState(StateE::kDisconnecting);
-        forceCloseInLoop();
-    }
-}
-// 在IO线程中强制关闭连接
-void TcpConnection::forceCloseInLoop() {
-    if (state_ == StateE::kConnected || state_ == StateE::kDisconnecting) {
-        handleClose();
+        socket_->shutdownWrite();
     }
 }

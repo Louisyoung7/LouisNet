@@ -17,7 +17,7 @@ add_subdirectory(src)
 add_subdirectory(example)
 
 # 测试相关配置（默认关闭）
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
 
 enable_testing()
 

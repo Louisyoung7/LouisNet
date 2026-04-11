@@ -28,7 +28,7 @@ static int createEventfd() {
 // 定义内部结构体
 struct EventLoop::Impl {
     std::unique_ptr<Poller> poller;                  // 指向EventLoop内部的Poller实例
-    ChannelList active_channels;                     // 活跃Channel列表
+    ChannelList activeChannels;                      // 活跃Channel列表
     std::atomic_bool looping{false};                 // 是否正在循环
     std::atomic_bool quit{false};                    // 是否停止事件循环
     std::vector<Functor> tasks;                      // 任务列表
@@ -40,18 +40,26 @@ struct EventLoop::Impl {
 
     // 构造函数
     explicit Impl(EventLoop* loop)
-        : poller(std::make_unique<Poller>(loop)),tid(std::this_thread::get_id()), eventfd(createEventfd()), eventChannel(std::make_unique<Channel>(loop, eventfd)) {
+        : poller(std::make_unique<Poller>(loop)),
+          tid(std::this_thread::get_id()),
+          eventfd(createEventfd()),
+          eventChannel(std::make_unique<Channel>(loop, eventfd)) {
     }
 };
 
 // 构造析构
-EventLoop::EventLoop() : impl_(std::make_unique<Impl>(this)){
+EventLoop::EventLoop() : impl_(std::make_unique<Impl>(this)) {
+    // 设置事件通知Channel的读回调，处理事件
+    impl_->eventChannel->setReadCallback([this]() { handleRead(); });
+    // 注册事件通知Channel到epoll，开启读事件监听
+    impl_->eventChannel->enableRead();
 }
 EventLoop::~EventLoop() = default;
 
 // 运行事件循环
 void EventLoop::loop() {
     assert(!impl_->looping);
+    assert(!impl_->quit);
 
     impl_->looping = true;
     impl_->quit = false;
@@ -60,14 +68,14 @@ void EventLoop::loop() {
 
     while (!impl_->quit) {
         // 填充活跃的Channel列表
-        poll(4000, impl_->active_channels);
+        poll(4000, impl_->activeChannels);
         // 遍历活跃的Channel列表
-        for (auto& channel : impl_->active_channels) {
+        for (auto& channel : impl_->activeChannels) {
             DEBUG_F("[EventLoop] loop() handling event for fd %d.\n\n", channel->fd());
             channel->handleEvent();
         }
         // 清空活跃的Channel列表
-        impl_->active_channels.clear();
+        impl_->activeChannels.clear();
     }
 
     DEBUG("[EventLoop] loop() exited.\n\n");
@@ -127,15 +135,15 @@ void EventLoop::wakeup() {
 
 void EventLoop::handleRead() {
     uint64_t one = 1;
-    ssize_t n = read(impl_->eventfd, &one, sizeof(one));
+    ssize_t n = ::read(impl_->eventfd, &one, sizeof(one));
     if (n != sizeof(one)) {
         ERROR_F("[EventLoop] handleRead() reads %lu bytes instead of 8.\n\n", n);
     }
 }
 
 // 调用Poller的poll
-void EventLoop::poll(int timeout_ms, ChannelList& active_channels) {
-    impl_->poller->poll(timeout_ms, active_channels);
+void EventLoop::poll(int timeoutMs, ChannelList& activeChannels) {
+    impl_->poller->poll(timeoutMs, activeChannels);
 }
 
 // 执行待处理任务

@@ -11,7 +11,6 @@
 #include "net/TcpConnection.h"
 
 namespace net {
-
 namespace reactor {
 class EventLoop;
 }
