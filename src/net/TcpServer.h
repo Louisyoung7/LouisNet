@@ -11,7 +11,6 @@
 #include "net/TcpConnection.h"
 
 namespace net {
-
 namespace reactor {
 class EventLoop;
 }
@@ -69,7 +68,9 @@ class TcpServer : public base::noncopyable {
     void onNewConnection(int sockfd, const net::InetAddress& peerAddr);
     // 处理连接回调
     void onConnection(const TcpConnectionPtr& conn);
-    // 处理关闭事件
-    void onClose(const TcpConnectionPtr& conn);
+    // 移除连接
+    void removeConnection(const TcpConnectionPtr& conn);
+    // 在IO线程移除连接
+    void removeConnectionInLoop(const TcpConnectionPtr& conn);
 };
 }  // namespace net

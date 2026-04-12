@@ -14,7 +14,9 @@
 #include "reactor/Channel.h"
 #include "reactor/EventLoop.h"
 
-namespace net {
+using namespace net;
+using namespace net::reactor;
+
 // 创建非阻塞的socket文件描述符
 static int createNonblockingSocket() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
@@ -25,11 +27,11 @@ static int createNonblockingSocket() {
     return fd;
 }
 // 构造析构
-Acceptor::Acceptor(reactor::EventLoop* loop, const InetAddress& listenAddr, bool reusePort)
+Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenAddr, bool reusePort)
     : loop_(loop),
       listening_(false),
       acceptSocket_(std::make_unique<Socket>(createNonblockingSocket())),
-      acceptChannel_(std::make_unique<reactor::Channel>(loop, acceptSocket_->fd())) {
+      acceptChannel_(std::make_unique<Channel>(loop, acceptSocket_->fd())) {
     // 绑定IP and Port
     acceptSocket_->bindAddress(listenAddr);
     // 设置复用地址和端口，设置Nagle算法
@@ -60,7 +62,7 @@ void Acceptor::listen() {
 
 // 处理监听的socket上的读事件（新连接）
 void Acceptor::handleRead() {
-    // 接受新连接，现在是单线程环境，单次接受避免阻塞
+    // 接受新连接
     InetAddress peerAddr;
     int connfd = acceptSocket_->accept(peerAddr);
     if (connfd > 0) {
@@ -82,4 +84,3 @@ void Acceptor::handleRead() {
         }
     }
 }
-}  // namespace net

@@ -1,19 +1,21 @@
 #include "Channel.h"
 
+#include <cassert>
+
 #include "EventLoop.h"
 #include "Poller.h"
 
-namespace net::reactor {
+using namespace net::reactor;
+
 // 构造析构
 Channel::Channel(EventLoop* loop, int fd)
     : loop_(loop), fd_(fd), events_(kNoneEvent), revents_(kNoneEvent), index_(kNew) {
 }
 Channel::~Channel() {
-    if (index_ != kNew) {
-        // 确保Channel没有注册任何事件
-        disableAll();
-        remove();
-    }
+    assert(index_ == kNew);
+    // 取消关注所有事件
+    disableAll();
+    remove();
 }
 
 void Channel::handleEvent() {
@@ -40,13 +42,12 @@ void Channel::handleEvent() {
     }
 }
 
-// 移除Channel
+// 从EventLoop中移除Channel
 void Channel::remove() {
     loop_->removeChannel(this);
 }
 
-// 更新Channel
+// 更新EventLoop中Channel的事件关注
 void Channel::update() {
     loop_->updateChannel(this);
 }
-}  // namespace net::reactor

@@ -1,60 +1,75 @@
 #include "EchoServer.h"
 
-#include <iostream>
+#include <chrono>
 #include <memory>
 #include <string>
 
-using std::cerr;
-using std::cout;
-using std::endl;
+#include "base/LouisLog.h"
+
+using namespace net;
+using namespace net::reactor;
+using namespace base;
 
 // 构造函数
-EchoServer::EchoServer(net::reactor::EventLoop* loop, const net::InetAddress& listenAddr)
-    : server_(std::make_unique<net::TcpServer>(loop, listenAddr)) {
+EchoServer::EchoServer(EventLoop* loop, const InetAddress& listenAddr, int numThreads)
+    : server_(std::make_unique<TcpServer>(loop, listenAddr)), threadPool_(std::make_unique<ThreadPool>(numThreads)) {
     // 设置消息接收回调
     server_->setMessageCallback(
-        [this](const net::TcpServer::TcpConnectionPtr& conn, base::Buffer& buffer) { onMessage(conn, buffer); });
+        [this](const TcpServer::TcpConnectionPtr& conn, Buffer& buffer) { onMessage(conn, buffer); });
 
     // 设置连接状态回调
-    server_->setConnectionCallback([this](const net::TcpServer::TcpConnectionPtr& conn) { onConnection(conn); });
+    server_->setConnectionCallback([this](const TcpServer::TcpConnectionPtr& conn) { onConnection(conn); });
 }
 
 // 启动服务器
 void EchoServer::start() {
     try {
-        cout << "[EchoServer] start() starting EchoServer on " << server_->listenAddr().toIpPort() << endl << endl;
+        INFO_F("[EchoServer] start() starting EchoServer on %s.\n\n", server_->listenAddr().toIpPort().c_str());
 
         server_->start();
     } catch (const std::exception& e) {
-        cerr << "[EchoServer] start() error: " << e.what() << endl << endl;
+        ERROR_F("[EchoServer] start() error: %s.\n\n", e.what());
     }
 }
 
 // 处理连接状态变化
 // 被设置为TcpServer的连接状态回调，在连接状态变化时输出日志
-void EchoServer::onConnection(const net::TcpServer::TcpConnectionPtr& conn) {
+void EchoServer::onConnection(const TcpServer::TcpConnectionPtr& conn) {
     if (conn->connected()) {
-        cout << "[EchoServer] onConnection() connection " << conn->name() << " established" << endl << endl;
+        INFO_F("[EchoServer] onConnection() connection %s established.\n\n", conn->name().c_str());
     } else {
-        cout << "[EchoServer] onConnection() connection " << conn->name() << " disconnected" << endl << endl;
+        INFO_F("[EchoServer] onConnection() connection %s disconnected.\n\n", conn->name().c_str());
     }
 }
 
 // 处理消息接收
 // 被设置为TcpServer的消息接收回调，调用连接实例的send方法回显数据
-void EchoServer::onMessage(const net::TcpServer::TcpConnectionPtr& conn, base::Buffer& buffer) {
+void EchoServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buffer) {
     try {
         // 读取buffer中的所有可读数据到string
         std::string message = buffer.retrieveAllAsString();
 
-        cout << "[EchoServer] onMessage() connection " << conn->name() << " received " << message.size()
-             << " bytes: " << message << endl
-             << endl;
+        INFO_F("[EchoServer] onMessage() connection %s received %ld bytes: %s.\n\n", conn->name().c_str(),
+               message.size(), message.c_str());
 
         // 回显数据
-        conn->send(message);
+        // 这里使用ThreadPool来异步发送数据，避免阻塞EventLoop线程
+        threadPool_->submit([conn, message]() {
+            // 模拟耗时操作，如数据库查询、文件写入等
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            conn->getLoop()->runInLoop([conn, message]() {
+                if (conn->connected()) {  // 发送前检查连接状态
+                    conn->send(message);
+                    DEBUG_F("[EchoServer] onMessage() connection %s sent %ld bytes.\n\n",
+                           conn->name().c_str(), message.size());
+                } else {
+                    DEBUG_F("[EchoServer] onMessage() connection %s disconnected, skip sending.\n\n",
+                           conn->name().c_str());
+                }
+            });
+        });
     } catch (const std::exception& e) {
-        cerr << "[EchoServer] onMessage() error: " << e.what() << endl << endl;
+        ERROR_F("[EchoServer] onMessage() error: %s.\n\n", e.what());
         return;
     }
 }

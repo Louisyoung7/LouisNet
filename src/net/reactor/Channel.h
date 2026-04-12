@@ -56,11 +56,11 @@ class Channel : public base::noncopyable {
         return fd_;
     }
     // 获取关心的事件
-    uint32_t events() const {
+    int events() const {
         return events_;
     }
     // 设置发生的事件
-    void setRevents(uint32_t revents) {
+    void setRevents(int revents) {
         revents_ = revents;
     }
     // 获取状态

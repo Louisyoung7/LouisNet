@@ -10,11 +10,11 @@
 #include "Socket.h"
 #include "base/Buffer.h"
 #include "base/noncopyable.h"
+#include "reactor/EventLoop.h"
 
 namespace net {
 
 namespace reactor {
-class EventLoop;
 class Channel;
 }  // namespace reactor
 
@@ -90,8 +90,6 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
 
     // 关闭连接
     void shutdown();
-    // 强制关闭连接
-    void forceClose();
 
     // 获取错误状态
     int getError() const {
@@ -129,8 +127,6 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
     void sendInLoop(const void* data, size_t len);
     // 在IO线程中关闭连接
     void shutdownInLoop();
-    // 在IO线程中强制关闭连接
-    void forceCloseInLoop();
 
     void setState(StateE s) {
         state_ = s;
