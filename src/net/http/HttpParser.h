@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 #include "HttpRequest.h"
 
@@ -22,7 +23,10 @@ class HttpParser {
     };
 
     // 解析HTTP请求
-    const ParseResult& parse(const std::string& data);
+    const ParseResult& parse(const std::string& data) {
+        return parse(data.c_str(), data.size());
+    }
+    const ParseResult& parse(const char* data, size_t len);
 
     // 重置解析状态
     void reset();
@@ -37,17 +41,5 @@ class HttpParser {
     std::string buffer_;                                 // 当前解析的请求体缓冲区
     ParseResult parse_result_ = ParseResult::kNeedMore;  // 当前解析结果
     State state_ = State::kStartLine;                    // 当前解析状态
-
-    // 按/r/n分割行
-    size_t splitLine();
-
-    // 解析请求行
-    bool parseRequestLine();
-    // 解析头
-    bool parseHeaders();
-    // 解析消息体
-    bool parseBody();
-    // 解析结束
-    bool parseEnd();
-};
+   };
 }  // namespace net::http
