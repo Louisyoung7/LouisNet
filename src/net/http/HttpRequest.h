@@ -11,6 +11,7 @@ struct HttpRequest {
     std::unordered_map<std::string, std::string> headers_;
     std::string body_;
 
+    // 重置请求对象
     void reset() {
         method_.clear();
         path_.clear();

@@ -24,6 +24,15 @@ class HttpResponse {
     // 转换为字符串
     std::string toString() const;
 
+    // 重置响应对象
+    void reset() {
+        version_.clear();
+        statusCode_ = 200;
+        statusMessage_.clear();
+        headers_.clear();
+        body_.clear();
+    }
+
    private:
     std::string version_ = "HTTP/1.1";
     int statusCode_ = 200;
