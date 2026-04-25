@@ -1,10 +1,12 @@
 #include "HttpParser.h"
 
-#include <algorithm>
-#include <cctype>
-#include <cstddef>
+#include <cassert>
+#include <string_view>
+
+#include "base/Buffer.h"
 
 using namespace net::http;
+using namespace base;
 
 namespace {
 // 按/r/n分割行
@@ -49,7 +51,7 @@ bool parseHeaders(std::string_view line, HttpRequest& request) {
 
     // 跳过冒号后面的空格
     size_t valStart = pos + 1;
-    while (valStart <= line.size() && line[valStart] == ' ') {
+    while (valStart < line.size() && line[valStart] == ' ') {
         valStart++;
     }
     std::string val(line.substr(valStart));
@@ -63,89 +65,110 @@ bool parseHeaders(std::string_view line, HttpRequest& request) {
 }
 }  // namespace
 
-// 解析HTTP请求
-HttpParser::ParseResult HttpParser::parse(const char* data, size_t len) {
-    buffer_.append(data, len);
+HttpParser::ParseResult HttpParser::parseRequest(Buffer& buffer, HttpRequest& outRequest) {
+    size_t parsed = 0;
+    auto result = parseCString(buffer.peek(), buffer.readableBytes(), outRequest, parsed);
+    // 更新已解析字节数
+    buffer.retrieve(parsed);
+    return result;
+}
 
-    while (!buffer_.empty()) {
+// 解析HTTP请求
+HttpParser::ParseResult HttpParser::parseCString(const char* data, size_t len, HttpRequest& outRequest,
+                                                 size_t& parsed) {
+    std::string_view sv(data, len);
+    std::string_view cur = sv;
+    ParseResult result = ParseResult::kNeedMore;
+
+    while (!cur.empty()) {
         if (state_ == State::kStartLine) {
             // 分割当前行和剩余数据
-            auto [line, rest] = splitLine(buffer_);
+            auto [line, rest] = splitLine(cur);
 
-            // 需要更多数据解析
-            if (line.empty() && rest == buffer_) {
+            // 需要更多数据解析请求行
+            if (line.empty() && rest == cur) {
                 break;
             }
             // 解析请求行
-            if (!parseRequestLine(line, request_)) {
-                return ParseResult::kError;
+            if (!parseRequestLine(line, outRequest)) {
+                result = ParseResult::kError;
+                break;
             }
-            // 更新缓冲区和状态
-            buffer_ = rest;
+            // 更新当前数据和状态
+            cur = rest;
             state_ = State::kHeaders;
         } else if (state_ == State::kHeaders) {
             // 分割当前行和剩余数据
-            auto [line, rest] = splitLine(buffer_);
+            auto [line, rest] = splitLine(cur);
 
             // 检查是否解析完请求头
             if (line.empty()) {
                 // 需要更多数据解析
-                if (rest == buffer_) {
+                if (rest == cur) {
                     break;
                 } else {
                     // 检查是否需要解析请求体
-                    if (auto it = request_.headers_.find("content-length"); it != request_.headers_.end()) {
+                    if (auto it = outRequest.headers_.find("content-length"); it != outRequest.headers_.end()) {
                         // 更新状态
                         state_ = State::kBody;
-                        // 更新缓冲区
-                        buffer_ = rest;
+                        // 更新当前数据
+                        cur = rest;
                         // 解析请求体长度
                         try {
                             contentLength_ = std::stoul(it->second);
                         } catch (...) {
-                            return ParseResult::kError;
+                            result = ParseResult::kError;
+                            break;
                         }
-                        // 请求体为空
+                        // content-length指定请求体长度为0
                         if (contentLength_ == 0) {
-                            return ParseResult::kSuccess;
+                            result = ParseResult::kSuccess;
                         }
                     } else {
-                        // 请求体为空
-                        return ParseResult::kSuccess;
+                        // 没有content-length头，请求体为空
+                        result = ParseResult::kSuccess;
                     }
                 }
             } else {
                 // 解析头部行
-                if (!parseHeaders(line, request_)) {
-                    return ParseResult::kError;
+                if (!parseHeaders(line, outRequest)) {
+                    result = ParseResult::kError;
+                    break;
                 }
-                // 更新缓冲区
-                buffer_ = rest;
+                // 更新当前数据
+                cur = rest;
             }
         } else if (state_ == State::kBody) {
-            size_t need = contentLength_ - request_.body_.size();
-            if (buffer_.size() >= need) {
+            size_t need = contentLength_ - bodyReceived_;
+            if (cur.size() >= need) {
                 // 解析请求体
-                request_.body_.append(buffer_.substr(0, need));
-                // 更新缓冲区
-                buffer_.erase(0, need);
-                return ParseResult::kSuccess;
+                outRequest.body_.append(cur.substr(0, need));
+                // 更新当前数据
+                cur = cur.substr(need, cur.size() - need);
+                // 更新已接收的Body字节数
+                bodyReceived_ += need;
+                // 这时已接收的Body字节数应该等于请求体长度
+                assert(bodyReceived_ == contentLength_);
+                // 重置解析器
+                reset();
+                result = ParseResult::kSuccess;
             } else {
-                request_.body_.append(buffer_);
-                buffer_.clear();
+                outRequest.body_.append(cur);
+                // 更新已接收的Body字节数
+                bodyReceived_ += cur.size();
                 break;
             }
-        } else {
-            return ParseResult::kSuccess;
         }
     }
 
-    return ParseResult::kNeedMore;
+    // 获取已解析字节数
+    parsed = sv.size() - cur.size();
+    return result;
 }
 
-// 重置解析状态
+// 重置解析器
 void HttpParser::reset() {
-    request_.reset();
-    buffer_.clear();
     state_ = State::kStartLine;
+    contentLength_ = 0;
+    bodyReceived_ = 0;
 }

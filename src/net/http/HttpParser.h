@@ -1,8 +1,10 @@
 #pragma once
 
-#include <string>
-
 #include "HttpRequest.h"
+
+namespace base {
+class Buffer;
+}  // namespace base
 
 namespace net::http {
 
@@ -21,23 +23,17 @@ class HttpParser {
     };
 
     // 解析HTTP请求
-    ParseResult parse(const std::string& data) {
-        return parse(data.c_str(), data.size());
-    }
-    ParseResult parse(const char* data, size_t len);
+    ParseResult parseRequest(base::Buffer& buffer, HttpRequest& outRequest);
 
-    // 重置解析状态
+    // 重置解析器
     void reset();
 
-    // 获取当前解析完成的请求对象
-    const HttpRequest& request() const {
-        return request_;
-    }
-
    private:
-    HttpRequest request_;              // 当前解析完成的请求对象
-    std::string buffer_;               // 当前解析的请求体缓冲区
     State state_ = State::kStartLine;  // 当前解析状态
     size_t contentLength_ = 0;         // 当前解析的请求体长度
+    size_t bodyReceived_ = 0;          // 已接收的请求体长度
+
+    // 解析C字符串
+    ParseResult parseCString(const char* data, size_t len, HttpRequest& outRequest, size_t& parsed);
 };
 }  // namespace net::http
