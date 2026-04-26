@@ -97,7 +97,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
     // 设置上下文
     void setContext(const std::any& context) { context_ = context; }
     // 获取上下文
-    std::any getContext() const { return context_; }
+    std::any getContext() { return context_; }   
 
    private:
     // 事件处理函数

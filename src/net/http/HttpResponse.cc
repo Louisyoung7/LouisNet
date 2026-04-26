@@ -14,12 +14,6 @@ HttpResponse& HttpResponse::setStatusCode(int statusCode) {
     return *this;
 }
 
-// 设置响应状态消息
-HttpResponse& HttpResponse::setStatusMessage(const std::string& statusMessage) {
-    statusMessage_ = statusMessage;
-    return *this;
-}
-
 // 修改已有响应头
 HttpResponse& HttpResponse::setHeader(const std::string& key, const std::string& value) {
     if (auto it = headers_.find(key); it == headers_.end()) {
@@ -55,17 +49,40 @@ std::string HttpResponse::toString() const {
     std::string response;
 
     // 状态行
-    response += version_ + ' ' + std::to_string(statusCode_) + ' ' + statusMessage_ + "\r\n";
+    response.append(version_)
+        .append(" ")
+        .append(std::to_string(statusCode_))
+        .append(" ")
+        .append(getStatusMessage(statusCode_))
+        .append("\r\n");
 
     // 响应头
-    for (const auto& it : headers_) {
-        response += it.first + ": " + it.second + "\r\n";
+    for (const auto& [key, value] : headers_) {
+        response.append(key).append(": ").append(value).append("\r\n");
     }
 
-    response += "\r\n";
+    response.append("\r\n");
 
     // 响应体
-    response += body_;
+    if (!body_.empty()) {
+        response.append(body_);
+    }
 
     return response;
+}
+
+// 辅助函数：状态码 → 状态文本
+std::string HttpResponse::getStatusMessage(int code) const {
+    switch (code) {
+        case 200:
+            return "OK";
+        case 400:
+            return "Bad Request";
+        case 404:
+            return "Not Found";
+        case 500:
+            return "Internal Server Error";
+        default:
+            return "Unknown";
+    }
 }

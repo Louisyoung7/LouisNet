@@ -40,6 +40,39 @@ void HttpServer::onConnection(const TcpServer::TcpConnectionPtr& conn) {
 }
 
 void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buffer) {
-    
-    
+    // 获取上下文对象
+    auto HttpCtx = std::any_cast<std::shared_ptr<HttpServerContext>>(conn->getContext());
+    if (!HttpCtx) {
+        // 连接上下文不存在，直接返回
+        return;
+    }
+
+    if (HttpCtx->responded_) {
+        // 已响应过，直接返回
+        return;
+    }
+
+    auto result = HttpCtx->parser.parseRequest(buffer, HttpCtx->ctx.request());
+    if (result == HttpParser::ParseResult::kSuccess) {
+        // 解析成功，调用请求处理回调
+        requestHandler_(HttpCtx->ctx);
+
+        // 响应完成，设置响应过标志
+        HttpCtx->responded_ = true;
+
+        // 发送响应
+        std::string responseStr = HttpCtx->ctx.response().toString();
+        conn->send(responseStr);
+        conn->shutdown();
+    } else if (result == HttpParser::ParseResult::kError) {
+        // 解析失败，返回400错误
+        HttpCtx->ctx.response().setStatusCode(400).setBody("Bad Request");
+
+        // 设置响应过标志
+        HttpCtx->responded_ = true;
+
+        std::string responseStr = HttpCtx->ctx.response().toString();
+        conn->send(responseStr);
+        conn->shutdown();
+    }
 }

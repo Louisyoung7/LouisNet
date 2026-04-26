@@ -11,7 +11,7 @@ namespace net::http {
 class HttpContext {
    public:
     HttpContext(TcpConnection* conn) : conn_(conn) {}
-    ~HttpContext();
+    ~HttpContext() = default;
 
     // 获取请求对象
     HttpRequest& request() { return request_; }

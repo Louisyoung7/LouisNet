@@ -24,9 +24,8 @@ TEST_F(HttpResponseTest, SetVersion) {
     EXPECT_TRUE(result.find("HTTP/1.0 200 OK") == 0);
 }
 
-TEST_F(HttpResponseTest, SetStatusCodeAndMessage) {
+TEST_F(HttpResponseTest, SetStatusCode) {
     response_.setStatusCode(404);
-    response_.setStatusMessage("Not Found");
     std::string result = response_.toString();
     EXPECT_TRUE(result.find("HTTP/1.1 404 Not Found") == 0);
 }
@@ -69,7 +68,6 @@ TEST_F(HttpResponseTest, SetBodyRvalue) {
 TEST_F(HttpResponseTest, CompleteResponse) {
     response_.setVersion("HTTP/1.1");
     response_.setStatusCode(200);
-    response_.setStatusMessage("OK");
     response_.addHeader("Content-Type", "application/json");
     response_.addHeader("Content-Length", "27");
     response_.setBody("{\"username\":\"test\",\"age\":1}");
@@ -84,7 +82,6 @@ TEST_F(HttpResponseTest, CompleteResponse) {
 
 TEST_F(HttpResponseTest, NotFoundResponse) {
     response_.setStatusCode(404);
-    response_.setStatusMessage("Not Found");
     response_.addHeader("Content-Type", "text/plain");
     response_.setBody("404 Not Found");
 
@@ -98,7 +95,6 @@ TEST_F(HttpResponseTest, NotFoundResponse) {
 TEST_F(HttpResponseTest, ChainedResponse) {
     response_.setVersion("HTTP/1.1")
         .setStatusCode(200)
-        .setStatusMessage("OK")
         .addHeader("Content-Type", "application/json")
         .addHeader("Content-Length", "27")
         .setBody("{\"username\":\"test\",\"age\":1}");
