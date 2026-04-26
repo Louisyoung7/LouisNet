@@ -3,30 +3,52 @@
 using namespace net::http;
 
 // 设置响应版本
-void HttpResponse::setVersion(const std::string& version) { version_ = version; }
+HttpResponse& HttpResponse::setVersion(const std::string& version) {
+    version_ = version;
+    return *this;
+}
 
 // 设置响应状态码
-void HttpResponse::setStatusCode(int statusCode) { statusCode_ = statusCode; }
+HttpResponse& HttpResponse::setStatusCode(int statusCode) {
+    statusCode_ = statusCode;
+    return *this;
+}
 
 // 设置响应状态消息
-void HttpResponse::setStatusMessage(const std::string& statusMessage) { statusMessage_ = statusMessage; }
+HttpResponse& HttpResponse::setStatusMessage(const std::string& statusMessage) {
+    statusMessage_ = statusMessage;
+    return *this;
+}
 
 // 修改已有响应头
-void HttpResponse::setHeader(const std::string& key, const std::string& value) {
+HttpResponse& HttpResponse::setHeader(const std::string& key, const std::string& value) {
     if (auto it = headers_.find(key); it == headers_.end()) {
-        return;
+        return *this;
     } else {
         headers_[key] = value;
+        return *this;
     }
 }
 
 // 添加新响应头
-void HttpResponse::addHeader(const std::string& key, const std::string& value) { headers_[key] = value; }
+HttpResponse& HttpResponse::addHeader(const std::string& key, const std::string& value) {
+    headers_[key] = value;
+    return *this;
+}
 
 // 设置响应体
-void HttpResponse::setBody(const std::string& body) { body_ = body; }
-void HttpResponse::setBody(const char* body, size_t len) { body_ = std::string(body, body + len); }
-void HttpResponse::setBody(std::string&& body) { body_ = std::move(body); }
+HttpResponse& HttpResponse::setBody(const std::string& body) {
+    body_ = body;
+    return *this;
+}
+HttpResponse& HttpResponse::setBody(const char* body, size_t len) {
+    body_ = std::string(body, body + len);
+    return *this;
+}
+HttpResponse& HttpResponse::setBody(std::string&& body) {
+    body_ = std::move(body);
+    return *this;
+}
 
 // 转换为字符串
 std::string HttpResponse::toString() const {

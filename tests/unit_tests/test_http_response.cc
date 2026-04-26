@@ -6,11 +6,9 @@ using namespace net::http;
 
 class HttpResponseTest : public ::testing::Test {
    protected:
-    void SetUp() override {
-    }
+    void SetUp() override {}
 
-    void TearDown() override {
-    }
+    void TearDown() override {}
 
     HttpResponse response_;
 };
@@ -95,4 +93,39 @@ TEST_F(HttpResponseTest, NotFoundResponse) {
     EXPECT_TRUE(result.find("HTTP/1.1 404 Not Found\r\n") == 0);
     EXPECT_TRUE(result.find("Content-Type: text/plain\r\n") != std::string::npos);
     EXPECT_TRUE(result.find("\r\n\r\n404 Not Found") != std::string::npos);
+}
+
+TEST_F(HttpResponseTest, ChainedResponse) {
+    response_.setVersion("HTTP/1.1")
+        .setStatusCode(200)
+        .setStatusMessage("OK")
+        .addHeader("Content-Type", "application/json")
+        .addHeader("Content-Length", "27")
+        .setBody("{\"username\":\"test\",\"age\":1}");
+
+    std::string result = response_.toString();
+
+    EXPECT_TRUE(result.find("HTTP/1.1 200 OK\r\n") == 0);
+    EXPECT_TRUE(result.find("Content-Type: application/json\r\n") != std::string::npos);
+    EXPECT_TRUE(result.find("Content-Length: 27\r\n") != std::string::npos);
+    EXPECT_TRUE(result.find("\r\n\r\n{\"username\":\"test\",\"age\":1}") != std::string::npos);
+}
+
+TEST_F(HttpResponseTest, ChainedHeaders) {
+    response_.addHeader("Header1", "Value1").addHeader("Header2", "Value2").addHeader("Header3", "Value3");
+
+    std::string result = response_.toString();
+
+    EXPECT_TRUE(result.find("Header1: Value1\r\n") != std::string::npos);
+    EXPECT_TRUE(result.find("Header2: Value2\r\n") != std::string::npos);
+    EXPECT_TRUE(result.find("Header3: Value3\r\n") != std::string::npos);
+}
+
+TEST_F(HttpResponseTest, ChainedSetBody) {
+    std::string body = "Test body";
+    response_.setBody(body).setBody("Direct string").setBody("Another body", 12);
+
+    std::string result = response_.toString();
+
+    EXPECT_TRUE(result.find("\r\n\r\nAnother body") != std::string::npos);
 }

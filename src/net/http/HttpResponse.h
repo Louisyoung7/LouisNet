@@ -6,20 +6,14 @@
 namespace net::http {
 class HttpResponse {
    public:
-    // 设置响应版本
-    void setVersion(const std::string& version);
-    // 设置响应状态码
-    void setStatusCode(int statusCode);
-    // 设置响应状态消息
-    void setStatusMessage(const std::string& statusMessage);
-    // 修改已有响应头
-    void setHeader(const std::string& key, const std::string& value);
-    // 添加新响应头
-    void addHeader(const std::string& key, const std::string& value);
-    // 设置响应体
-    void setBody(const std::string& body);
-    void setBody(const char* body, size_t len);
-    void setBody(std::string&& body);
+    HttpResponse& setVersion(const std::string& version);
+    HttpResponse& setStatusCode(int statusCode);
+    HttpResponse& setStatusMessage(const std::string& statusMessage);
+    HttpResponse& setHeader(const std::string& key, const std::string& value);
+    HttpResponse& addHeader(const std::string& key, const std::string& value);
+    HttpResponse& setBody(const std::string& body);
+    HttpResponse& setBody(const char* body, size_t len);
+    HttpResponse& setBody(std::string&& body);
 
     // 转换为字符串
     std::string toString() const;
