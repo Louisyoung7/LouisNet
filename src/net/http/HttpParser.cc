@@ -55,6 +55,9 @@ bool parseHeaders(std::string_view line, HttpRequest& request) {
         valStart++;
     }
     std::string val(line.substr(valStart));
+    while (!val.empty() && val.back() == ' ') {
+        val.pop_back();
+    }
 
     // 头部名转小写
     std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -123,10 +126,14 @@ HttpParser::ParseResult HttpParser::parseCString(const char* data, size_t len, H
                         // content-length指定请求体长度为0
                         if (contentLength_ == 0) {
                             result = ParseResult::kSuccess;
+                            break;
                         }
                     } else {
                         // 没有content-length头，请求体为空
+                        // 更新当前数据
+                        cur = rest;
                         result = ParseResult::kSuccess;
+                        break;
                     }
                 }
             } else {
@@ -152,10 +159,13 @@ HttpParser::ParseResult HttpParser::parseCString(const char* data, size_t len, H
                 // 重置解析器
                 reset();
                 result = ParseResult::kSuccess;
+                break;
             } else {
                 outRequest.body_.append(cur);
                 // 更新已接收的Body字节数
                 bodyReceived_ += cur.size();
+                // 更新当前数据
+                cur.remove_prefix(cur.size());
                 break;
             }
         }

@@ -40,6 +40,6 @@ void HttpServer::onConnection(const TcpServer::TcpConnectionPtr& conn) {
 }
 
 void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buffer) {
-    std::string message = buffer.retrieveAllAsString();
+    
     
 }
