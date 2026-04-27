@@ -14,18 +14,8 @@ HttpResponse& HttpResponse::setStatusCode(int statusCode) {
     return *this;
 }
 
-// 修改已有响应头
+// 设置响应头
 HttpResponse& HttpResponse::setHeader(const std::string& key, const std::string& value) {
-    if (auto it = headers_.find(key); it == headers_.end()) {
-        return *this;
-    } else {
-        headers_[key] = value;
-        return *this;
-    }
-}
-
-// 添加新响应头
-HttpResponse& HttpResponse::addHeader(const std::string& key, const std::string& value) {
     headers_[key] = value;
     return *this;
 }

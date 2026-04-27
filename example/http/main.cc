@@ -34,10 +34,12 @@ int main() {
 
         if (!req.body_.empty()) {
             echo += "Body:\r\n" + req.body_ + "\r\n";
-            resp.addHeader("content-length", std::to_string(echo.size()));
         }
 
-        resp.setStatusCode(200).addHeader("Content-Type", "text/plain").setBody(echo);
+        resp.setStatusCode(200)
+            .setHeader("Content-Type", "text/plain")
+            .setHeader("Content-Length", std::to_string(echo.size()))
+            .setBody(echo);
     });
 
     // 启动服务器

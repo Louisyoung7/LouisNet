@@ -30,16 +30,7 @@ TEST_F(HttpResponseTest, SetStatusCode) {
     EXPECT_TRUE(result.find("HTTP/1.1 404 Not Found") == 0);
 }
 
-TEST_F(HttpResponseTest, AddHeader) {
-    response_.addHeader("Content-Type", "text/html");
-    response_.addHeader("Content-Length", "13");
-    std::string result = response_.toString();
-    EXPECT_TRUE(result.find("Content-Type: text/html\r\n") != std::string::npos);
-    EXPECT_TRUE(result.find("Content-Length: 13\r\n") != std::string::npos);
-}
-
 TEST_F(HttpResponseTest, SetHeader) {
-    response_.addHeader("Content-Type", "text/html");
     response_.setHeader("Content-Type", "application/json");
     std::string result = response_.toString();
     EXPECT_TRUE(result.find("Content-Type: application/json\r\n") != std::string::npos);
@@ -68,8 +59,8 @@ TEST_F(HttpResponseTest, SetBodyRvalue) {
 TEST_F(HttpResponseTest, CompleteResponse) {
     response_.setVersion("HTTP/1.1");
     response_.setStatusCode(200);
-    response_.addHeader("Content-Type", "application/json");
-    response_.addHeader("Content-Length", "27");
+    response_.setHeader("Content-Type", "application/json");
+    response_.setHeader("Content-Length", "27");
     response_.setBody("{\"username\":\"test\",\"age\":1}");
 
     std::string result = response_.toString();
@@ -82,7 +73,7 @@ TEST_F(HttpResponseTest, CompleteResponse) {
 
 TEST_F(HttpResponseTest, NotFoundResponse) {
     response_.setStatusCode(404);
-    response_.addHeader("Content-Type", "text/plain");
+    response_.setHeader("Content-Type", "text/plain");
     response_.setBody("404 Not Found");
 
     std::string result = response_.toString();
@@ -95,8 +86,8 @@ TEST_F(HttpResponseTest, NotFoundResponse) {
 TEST_F(HttpResponseTest, ChainedResponse) {
     response_.setVersion("HTTP/1.1")
         .setStatusCode(200)
-        .addHeader("Content-Type", "application/json")
-        .addHeader("Content-Length", "27")
+        .setHeader("Content-Type", "application/json")
+        .setHeader("Content-Length", "27")
         .setBody("{\"username\":\"test\",\"age\":1}");
 
     std::string result = response_.toString();
@@ -108,7 +99,7 @@ TEST_F(HttpResponseTest, ChainedResponse) {
 }
 
 TEST_F(HttpResponseTest, ChainedHeaders) {
-    response_.addHeader("Header1", "Value1").addHeader("Header2", "Value2").addHeader("Header3", "Value3");
+    response_.setHeader("Header1", "Value1").setHeader("Header2", "Value2").setHeader("Header3", "Value3");
 
     std::string result = response_.toString();
 

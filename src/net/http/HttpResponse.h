@@ -9,7 +9,6 @@ class HttpResponse {
     HttpResponse& setVersion(const std::string& version);
     HttpResponse& setStatusCode(int statusCode);
     HttpResponse& setHeader(const std::string& key, const std::string& value);
-    HttpResponse& addHeader(const std::string& key, const std::string& value);
     HttpResponse& setBody(const std::string& body);
     HttpResponse& setBody(const char* body, size_t len);
     HttpResponse& setBody(std::string&& body);
