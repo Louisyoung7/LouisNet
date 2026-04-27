@@ -38,5 +38,8 @@ class HttpServer {
 
     // 处理消息接收
     void onMessage(const net::TcpServer::TcpConnectionPtr& conn, base::Buffer& buffer);
+
+    // 判断是否Keep-Alive
+    bool isKeepAlive(const HttpContext& ctx);
 };
 }  // namespace net::http

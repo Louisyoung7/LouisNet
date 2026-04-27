@@ -57,22 +57,64 @@ void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
         // 解析成功，调用请求处理回调
         requestHandler_(HttpCtx->ctx);
 
-        // 响应完成，设置响应过标志
-        HttpCtx->responded_ = true;
+        // 判断是否Keep-Alive
+        bool keepAlive = isKeepAlive(HttpCtx->ctx);
+        if (keepAlive) {
+            // 设置响应头为Keep-Alive
+            HttpCtx->ctx.response().setHeader("Connection", "keep-alive");
+        } else {
+            // 设置响应头为close
+            HttpCtx->ctx.response().setHeader("Connection", "close");
+        }
 
         // 发送响应
         std::string responseStr = HttpCtx->ctx.response().toString();
         conn->send(responseStr);
-        conn->shutdown();
+
+        // 响应完成，设置响应过标志
+        HttpCtx->responded_ = true;
+
+        if (!keepAlive) {
+            conn->shutdown();
+        }
     } else if (result == HttpParser::ParseResult::kError) {
         // 解析失败，返回400错误
-        HttpCtx->ctx.response().setStatusCode(400).setBody("Bad Request");
+        HttpCtx->ctx.response().setStatusCode(400).setHeader("Connection", "close").setBody("Bad Request");
+
+        std::string responseStr = HttpCtx->ctx.response().toString();
+        conn->send(responseStr);
 
         // 设置响应过标志
         HttpCtx->responded_ = true;
 
-        std::string responseStr = HttpCtx->ctx.response().toString();
-        conn->send(responseStr);
         conn->shutdown();
+    }
+}
+
+// 判断是否Keep-Alive
+bool HttpServer::isKeepAlive(const HttpContext& ctx) {
+    const auto& req = ctx.request();
+    auto it = req.headers_.find("connection");
+    
+    // HTTP/1.1协议中，默认是Keep-Alive，除非指定为close
+    // HTTP/1.0协议中，默认是close，除非指定为keep-alive
+    if (req.version_ == "HTTP/1.1") {
+        // 没有connection头，默认是Keep-Alive
+        if(it == req.headers_.end()) {
+            return true;
+        }
+        if(it->second == "close") {
+            return false;
+        }
+        return true;
+    } else {
+        // 没有connection头，默认是close
+        if(it == req.headers_.end()) {
+            return false;
+        }
+        if(it->second == "keep-alive") {
+            return true;
+        }
+        return false;
     }
 }
