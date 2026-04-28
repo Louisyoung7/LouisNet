@@ -211,4 +211,4 @@ void LouisLog::openLogFile() {
     }
 }
 
-}  // namespace log
+}  // namespace louis::log

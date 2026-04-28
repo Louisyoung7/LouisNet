@@ -11,9 +11,8 @@ using namespace net;
 using namespace base;
 
 struct HttpServer::HttpServerContext {
-    HttpContext ctx;          // 上下文对象
-    HttpParser parser;        // HTTP解析器对象
-    bool responded_ = false;  // 是否响应过，HTTP协议中每个请求只能响应一次
+    HttpContext ctx;    // 上下文对象
+    HttpParser parser;  // HTTP解析器对象
     HttpServerContext(TcpConnection* conn) : ctx(conn) {}
 };
 
@@ -47,47 +46,48 @@ void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
         return;
     }
 
-    if (HttpCtx->responded_) {
-        // 已响应过，直接返回
-        return;
-    }
+    while (buffer.readableBytes() > 0) {
+        auto result = HttpCtx->parser.parseRequest(buffer, HttpCtx->ctx.request());
+        if (result == HttpParser::ParseResult::kSuccess) {
+            // 解析成功，调用请求处理回调
+            requestHandler_(HttpCtx->ctx);
 
-    auto result = HttpCtx->parser.parseRequest(buffer, HttpCtx->ctx.request());
-    if (result == HttpParser::ParseResult::kSuccess) {
-        // 解析成功，调用请求处理回调
-        requestHandler_(HttpCtx->ctx);
+            // 判断是否Keep-Alive
+            bool keepAlive = isKeepAlive(HttpCtx->ctx);
+            if (keepAlive) {
+                // 设置响应头为Keep-Alive
+                HttpCtx->ctx.response().setHeader("Connection", "keep-alive");
+            } else {
+                // 设置响应头为close
+                HttpCtx->ctx.response().setHeader("Connection", "close");
+            }
 
-        // 判断是否Keep-Alive
-        bool keepAlive = isKeepAlive(HttpCtx->ctx);
-        if (keepAlive) {
-            // 设置响应头为Keep-Alive
-            HttpCtx->ctx.response().setHeader("Connection", "keep-alive");
-        } else {
-            // 设置响应头为close
-            HttpCtx->ctx.response().setHeader("Connection", "close");
-        }
+            // 发送响应
+            std::string responseStr = HttpCtx->ctx.response().toString();
 
-        // 发送响应
-        std::string responseStr = HttpCtx->ctx.response().toString();
-        conn->send(responseStr);
+            // 重置上下文
+            resetContext(*HttpCtx.get());
 
-        // 响应完成，设置响应过标志
-        HttpCtx->responded_ = true;
+            // 发送响应
+            conn->send(responseStr);
 
-        if (!keepAlive) {
+            if (!keepAlive) {
+                conn->shutdown();
+            }
+        } else if (result == HttpParser::ParseResult::kError) {
+            // 解析失败，返回400错误
+            HttpCtx->ctx.response().setStatusCode(400).setHeader("Connection", "close").setBody("Bad Request");
+
+            std::string responseStr = HttpCtx->ctx.response().toString();
+
+            // 重置上下文
+            resetContext(*HttpCtx.get());
+
+            // 发送响应
+            conn->send(responseStr);
+
             conn->shutdown();
         }
-    } else if (result == HttpParser::ParseResult::kError) {
-        // 解析失败，返回400错误
-        HttpCtx->ctx.response().setStatusCode(400).setHeader("Connection", "close").setBody("Bad Request");
-
-        std::string responseStr = HttpCtx->ctx.response().toString();
-        conn->send(responseStr);
-
-        // 设置响应过标志
-        HttpCtx->responded_ = true;
-
-        conn->shutdown();
     }
 }
 
@@ -95,26 +95,33 @@ void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
 bool HttpServer::isKeepAlive(const HttpContext& ctx) {
     const auto& req = ctx.request();
     auto it = req.headers_.find("connection");
-    
+
     // HTTP/1.1协议中，默认是Keep-Alive，除非指定为close
     // HTTP/1.0协议中，默认是close，除非指定为keep-alive
     if (req.version_ == "HTTP/1.1") {
         // 没有connection头，默认是Keep-Alive
-        if(it == req.headers_.end()) {
+        if (it == req.headers_.end()) {
             return true;
         }
-        if(it->second == "close") {
+        if (it->second == "close") {
             return false;
         }
         return true;
     } else {
         // 没有connection头，默认是close
-        if(it == req.headers_.end()) {
+        if (it == req.headers_.end()) {
             return false;
         }
-        if(it->second == "keep-alive") {
+        if (it->second == "keep-alive") {
             return true;
         }
         return false;
     }
+}
+
+// 重置上下文
+void HttpServer::resetContext(HttpServerContext& ctx) {
+    ctx.parser.reset();
+    ctx.ctx.request().reset();
+    ctx.ctx.response().reset();
 }

@@ -36,7 +36,8 @@ int main() {
             echo += "Body:\r\n" + req.body_ + "\r\n";
         }
 
-        resp.setStatusCode(200)
+        resp.setVersion(req.version_)
+            .setStatusCode(200)
             .setHeader("Content-Type", "text/plain")
             .setHeader("Content-Length", std::to_string(echo.size()))
             .setBody(echo);

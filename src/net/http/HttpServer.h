@@ -41,5 +41,8 @@ class HttpServer {
 
     // 判断是否Keep-Alive
     bool isKeepAlive(const HttpContext& ctx);
-};
+
+    // 重置上下文
+    void resetContext(HttpServerContext& ctx);
+   };
 }  // namespace net::http

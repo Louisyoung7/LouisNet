@@ -25,7 +25,7 @@ class HttpResponse {
     }
 
    private:
-    std::string version_ = "HTTP/1.1";
+    std::string version_;
     int statusCode_ = 200;
     std::map<std::string, std::string> headers_;
     std::string body_;
