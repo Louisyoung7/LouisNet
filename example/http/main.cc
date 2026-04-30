@@ -15,13 +15,13 @@ int main() {
     EventLoop loop;
 
     // 配置本端地址
-    InetAddress listenAddr(8888);
+    InetAddress listenAddr(8080);
 
     // 创建HttpServer
     HttpServer server(&loop, listenAddr);
 
-    // 设置请求处理回调
-    server.setRequestHandler([](HttpContext& ctx) {
+    // 注册路径对应的请求处理回调函数
+    server.registerHandler("/", [](HttpContext& ctx) {
         const auto& req = ctx.request();
         auto& resp = ctx.response();
 

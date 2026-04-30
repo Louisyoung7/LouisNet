@@ -97,6 +97,7 @@ HttpParser::ParseResult HttpParser::parseCString(const char* data, size_t len, H
                 result = ParseResult::kError;
                 break;
             }
+
             // 更新当前数据和状态
             cur = rest;
             state_ = State::kHeaders;

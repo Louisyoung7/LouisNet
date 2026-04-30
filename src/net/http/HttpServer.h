@@ -1,9 +1,11 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 
 #include "base/Buffer.h"
 #include "net/TcpServer.h"
+#include "net/http/HttpParser.h"
 
 namespace net {
 class InetAddress;
@@ -24,14 +26,14 @@ class HttpServer {
 
     void start();
 
-    // 设置请求处理回调函数
-    void setRequestHandler(RequestHandler cb) { requestHandler_ = std::move(cb); }
+    // 注册路径对应的请求处理回调函数
+    void registerHandler(const std::string& path, RequestHandler cb) { handlers_[path] = std::move(cb); }
 
    private:
     struct HttpServerContext;  ///< 连接上下文结构体，包含HttpContext和HttpParser
 
     std::unique_ptr<TcpServer> server_;  ///< 组合模式包含TcpServer实例
-    RequestHandler requestHandler_;      ///< 请求处理回调函数
+    std::unordered_map<std::string, RequestHandler> handlers_;  ///< 路径对应的请求处理回调函数映射
 
     // 处理连接状态变化
     void onConnection(const net::TcpServer::TcpConnectionPtr& conn);
@@ -39,10 +41,13 @@ class HttpServer {
     // 处理消息接收
     void onMessage(const net::TcpServer::TcpConnectionPtr& conn, base::Buffer& buffer);
 
+    // 处理请求
+    void onRequest(HttpContext& ctx);
+
     // 判断是否Keep-Alive
-    bool isKeepAlive(const HttpContext& ctx);
+    bool isKeepAlive(const HttpRequest& req);
 
     // 重置上下文
     void resetContext(HttpServerContext& ctx);
-   };
+};
 }  // namespace net::http

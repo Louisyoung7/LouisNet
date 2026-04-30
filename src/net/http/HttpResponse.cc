@@ -47,16 +47,12 @@ std::string HttpResponse::toString() const {
         .append("\r\n");
 
     // 响应头
-    for (const auto& [key, value] : headers_) {
-        response.append(key).append(": ").append(value).append("\r\n");
-    }
+    for (const auto& [key, value] : headers_) { response.append(key).append(": ").append(value).append("\r\n"); }
 
     response.append("\r\n");
 
     // 响应体
-    if (!body_.empty()) {
-        response.append(body_);
-    }
+    if (!body_.empty()) { response.append(body_); }
 
     return response;
 }

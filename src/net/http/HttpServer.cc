@@ -3,6 +3,7 @@
 #include "HttpContext.h"
 #include "HttpParser.h"
 #include "net/InetAddress.h"
+#include "net/http/HttpRequest.h"
 #include "net/reactor/EventLoop.h"
 
 using namespace net::http;
@@ -49,18 +50,12 @@ void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
     while (buffer.readableBytes() > 0) {
         auto result = HttpCtx->parser.parseRequest(buffer, HttpCtx->ctx.request());
         if (result == HttpParser::ParseResult::kSuccess) {
-            // 解析成功，调用请求处理回调
-            requestHandler_(HttpCtx->ctx);
+            // 解析成功，调用注册的请求处理回调函数
+            onRequest(HttpCtx->ctx);
 
             // 判断是否Keep-Alive
-            bool keepAlive = isKeepAlive(HttpCtx->ctx);
-            if (keepAlive) {
-                // 设置响应头为Keep-Alive
-                HttpCtx->ctx.response().setHeader("Connection", "keep-alive");
-            } else {
-                // 设置响应头为close
-                HttpCtx->ctx.response().setHeader("Connection", "close");
-            }
+            bool keepAlive = isKeepAlive(HttpCtx->ctx.request());
+            HttpCtx->ctx.response().setHeader("Connection", keepAlive ? "keep-alive" : "close");
 
             // 发送响应
             std::string responseStr = HttpCtx->ctx.response().toString();
@@ -71,9 +66,7 @@ void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
             // 发送响应
             conn->send(responseStr);
 
-            if (!keepAlive) {
-                conn->shutdown();
-            }
+            if (!keepAlive) { conn->shutdown(); }
         } else if (result == HttpParser::ParseResult::kError) {
             // 解析失败，返回400错误
             HttpCtx->ctx.response().setStatusCode(400).setHeader("Connection", "close").setBody("Bad Request");
@@ -91,30 +84,40 @@ void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
     }
 }
 
-// 判断是否Keep-Alive
-bool HttpServer::isKeepAlive(const HttpContext& ctx) {
+// 处理请求
+void HttpServer::onRequest(HttpContext& ctx) {
+    // 获取请求路径
     const auto& req = ctx.request();
+    auto it = handlers_.find(req.path_);
+    if (it == handlers_.end()) {
+        // 没有注册该路径的回调函数，返回404错误
+        ctx.response()
+            .setVersion(req.version_)
+            .setStatusCode(404)
+            .setBody("Not Found")
+            .setHeader("Content-Length", "10");
+        return;
+    }
+
+    // 调用注册的回调函数
+    it->second(ctx);
+}
+
+// 判断是否Keep-Alive
+bool HttpServer::isKeepAlive(const HttpRequest& req) {
     auto it = req.headers_.find("connection");
 
     // HTTP/1.1协议中，默认是Keep-Alive，除非指定为close
     // HTTP/1.0协议中，默认是close，除非指定为keep-alive
     if (req.version_ == "HTTP/1.1") {
         // 没有connection头，默认是Keep-Alive
-        if (it == req.headers_.end()) {
-            return true;
-        }
-        if (it->second == "close") {
-            return false;
-        }
+        if (it == req.headers_.end()) { return true; }
+        if (it->second == "close") { return false; }
         return true;
     } else {
         // 没有connection头，默认是close
-        if (it == req.headers_.end()) {
-            return false;
-        }
-        if (it->second == "keep-alive") {
-            return true;
-        }
+        if (it == req.headers_.end()) { return false; }
+        if (it->second == "keep-alive") { return true; }
         return false;
     }
 }
