@@ -1,10 +1,10 @@
 #pragma once
 
+#include <any>
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <string>
-#include <utility>
 
 #include "InetAddress.h"
 #include "Socket.h"
@@ -52,36 +52,24 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
     base::Buffer outputBuffer_;  ///< 发送缓冲区
     base::Buffer inputBuffer_;   ///< 接收缓冲区
 
+    std::any context_;  ///< 上下文对象
+
    public:
     // 构造析构
     TcpConnection(reactor::EventLoop* loop, int sockfd, const InetAddress& localAddr, const InetAddress& peerAddr);
     ~TcpConnection();
 
     // 获取相关信息
-    reactor::EventLoop* getLoop() const {
-        return loop_;
-    }
-    int fd() const {
-        return socket_->fd();
-    }
-    const InetAddress& localAddress() const {
-        return localAddr_;
-    }
-    const InetAddress& peerAddress() const {
-        return peerAddr_;
-    }
-    const std::string& name() const {
-        return name_;
-    }
+    reactor::EventLoop* getLoop() const { return loop_; }
+    int fd() const { return socket_->fd(); }
+    const InetAddress& localAddress() const { return localAddr_; }
+    const InetAddress& peerAddress() const { return peerAddr_; }
+    const std::string& name() const { return name_; }
 
     // 查询是否已连接
-    bool connected() const {
-        return state_ == StateE::kConnected;
-    }
+    bool connected() const { return state_ == StateE::kConnected; }
     // 查询是否断开连接
-    bool disconnected() const {
-        return state_ == StateE::kDisconnected;
-    }
+    bool disconnected() const { return state_ == StateE::kDisconnected; }
 
     // 发送数据
     void send(const std::string& message);
@@ -92,29 +80,24 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
     void shutdown();
 
     // 获取错误状态
-    int getError() const {
-        return error_;
-    }
+    int getError() const { return error_; }
 
     // 设置回调函数
-    void setConnectionCallback(ConnectionCallback cb) {
-        connectionCallback_ = std::move(cb);
-    }
-    void setMessageCallback(MessageCallback cb) {
-        messageCallback_ = std::move(cb);
-    }
-    void setWriteCompleteCallback(WriteCompleteCallback cb) {
-        writeCompleteCallback_ = std::move(cb);
-    }
-    void setCloseCallback(CloseCallback cb) {
-        closeCallback_ = std::move(cb);
-    }
+    void setConnectionCallback(ConnectionCallback cb) { connectionCallback_ = std::move(cb); }
+    void setMessageCallback(MessageCallback cb) { messageCallback_ = std::move(cb); }
+    void setWriteCompleteCallback(WriteCompleteCallback cb) { writeCompleteCallback_ = std::move(cb); }
+    void setCloseCallback(CloseCallback cb) { closeCallback_ = std::move(cb); }
 
     // 连接建立
     void connectionEstablished();
 
     // 连接销毁
     void connectionDestroyed();
+
+    // 设置上下文
+    void setContext(const std::any& context) { context_ = context; }
+    // 获取上下文
+    std::any getContext() { return context_; }   
 
    private:
     // 事件处理函数
@@ -128,8 +111,6 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
     // 在IO线程中关闭连接
     void shutdownInLoop();
 
-    void setState(StateE s) {
-        state_ = s;
-    }
+    void setState(StateE s) { state_ = s; }
 };
 }  // namespace net

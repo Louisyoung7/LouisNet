@@ -176,7 +176,7 @@ void TcpConnection::handleClose() {
     }
 
     connectionDestroyed();
-    
+
     // 所有回调执行完，这时对象的生命周期才结束，自动销毁（前提是没有其他引用）
 }
 // 获取并打印sockfd的错误信息，然后调用handleClose()关闭连接
@@ -198,9 +198,7 @@ void TcpConnection::handleError() {
 }
 
 // 发送string数据，底层直接调用write系统调用
-void TcpConnection::send(const std::string& message) {
-    send(message.data(), message.size());
-}
+void TcpConnection::send(const std::string& message) { send(message.data(), message.size()); }
 // 发送原始数据，底层直接调用write系统调用
 void TcpConnection::send(const void* data, size_t len) {
     // 确保当前连接状态是已连接

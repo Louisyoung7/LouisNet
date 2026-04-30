@@ -29,17 +29,13 @@ void LouisLog::init(LogLevel level, LogTarget target, std::string logFile, size_
     maxFileSize_ = maxFileSize;
 
     // 如果输出目标包含文件，则打开文件
-    if (target_ == LogTarget::FILE || target_ == LogTarget::BOTH) {
-        openLogFile();
-    }
+    if (target_ == LogTarget::FILE || target_ == LogTarget::BOTH) { openLogFile(); }
 }
 
 // 日志写入
 void LouisLog::log(LogLevel level, const std::string& file, int line, const std::string& msg) {
     // 判断日志级别
-    if (level < level_) {
-        return;
-    }
+    if (level < level_) { return; }
 
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -92,8 +88,7 @@ void LouisLog::setTarget(LogTarget target) {
         openLogFile();
     }
     // 如果不包含文件，则关闭文件
-    else if (fileStream_.is_open()) {
-    }
+    else if (fileStream_.is_open()) {}
 }
 
 // 设置日志输出文件
@@ -164,9 +159,7 @@ std::string LouisLog::getThreadId() {
 
 // 检查文件大小，判断是否翻滚文件
 void LouisLog::checkAndRollLog() {
-    if (!fileStream_.is_open()) {
-        return;
-    }
+    if (!fileStream_.is_open()) { return; }
 
     // 获取文件大小
     fileStream_.seekp(0, std::ios_base::end);
@@ -178,9 +171,7 @@ void LouisLog::checkAndRollLog() {
         std::string timestamp = getTimestamp();
         // 替换时间戳的分隔符，使其符合文件名规范
         for (auto& c : timestamp) {
-            if (c == ' ' || c == ':') {
-                c = '-';
-            }
+            if (c == ' ' || c == ':') { c = '-'; }
         }
 
         // 创建文件名
@@ -200,15 +191,11 @@ void LouisLog::checkAndRollLog() {
 // 打开日志文件
 void LouisLog::openLogFile() {
     // 关闭已打开的文件
-    if (fileStream_.is_open()) {
-        fileStream_.close();
-    }
+    if (fileStream_.is_open()) { fileStream_.close(); }
 
     // 重新以追加模式打开文件
     fileStream_.open(logFile_, std::ios_base::out | std::ios_base::app);
-    if (!fileStream_.is_open()) {
-        std::cerr << "Failed to open log file: " << logFile_ << std::endl;
-    }
+    if (!fileStream_.is_open()) { std::cerr << "Failed to open log file: " << logFile_ << std::endl; }
 }
 
-}  // namespace log
+}  // namespace louis::log

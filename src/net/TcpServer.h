@@ -20,7 +20,7 @@ class Acceptor;
 class TcpServer : public base::noncopyable {
    public:
     // 连接智能指针类型定义
-    using TcpConnectionPtr = std::shared_ptr<net::TcpConnection>;
+    using TcpConnectionPtr = net::TcpConnection::TcpConnectionPtr;
 
    private:
     // 回调函数类型定义
@@ -45,23 +45,15 @@ class TcpServer : public base::noncopyable {
     ~TcpServer();
 
     // 获取监听地址信息
-    const net::InetAddress& listenAddr() const {
-        return listenAddr_;
-    }
+    const net::InetAddress& listenAddr() const { return listenAddr_; }
 
     // 启动服务器
     void start();
 
     // 设置回调函数
-    void setConnectionCallback(ConnectionCallback cb) {
-        connectionCallback_ = std::move(cb);
-    }
-    void setMessageCallback(MessageCallback cb) {
-        messageCallback_ = std::move(cb);
-    }
-    void setWriteCompleteCallback(WriteCompleteCallback cb) {
-        writeCompleteCallback_ = std::move(cb);
-    }
+    void setConnectionCallback(ConnectionCallback cb) { connectionCallback_ = std::move(cb); }
+    void setMessageCallback(MessageCallback cb) { messageCallback_ = std::move(cb); }
+    void setWriteCompleteCallback(WriteCompleteCallback cb) { writeCompleteCallback_ = std::move(cb); }
 
    private:
     // 处理新连接
