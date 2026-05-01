@@ -4,17 +4,19 @@
 
 ## 项目简介
 
-LouisNet是一个轻量级的网络库，采用经典的Reactor设计模式，基于epoll实现高效的I/O多路复用。该库提供了完整的网络编程基础设施，包括事件循环、Channel、Poller、TcpServer、TcpConnection等核心组件，适用于构建高性能的网络服务器应用。
+LouisNet 是一个轻量级、高性能的 C++17 网络库，采用经典的 **Reactor 设计模式**，基于 `epoll` 实现高效的 I/O 多路复用。  
+目前已支持 **HTTP/1.1 服务器**，并经过高并发压测验证（**QPS 15~16 万**），适用于构建低延迟、高吞吐的网络服务。  
+库内集成 **spdlog 日志系统**，提供高性能异步日志记录能力，并通过精心设计的 **Buffer 类**实现高效读写，最大化 I/O 效率。
 
 ## 核心特性
 
-- **Reactor模式**：基于事件驱动的编程模型，通过EventLoop管理事件循环
-- **epoll高效I/O多路复用**：使用epoll_wait实现高并发连接处理
-- **线程池支持**：可配置的工作线程池，支持多线程处理
-- **缓冲区管理**：高效的Buffer类，支持零拷贝读写
-- **连接管理**：完整的TcpServer和TcpConnection类，简化连接生命周期管理
-- **日志系统**：支持多级别日志输出（TRACE/DEBUG/INFO/WARN/ERROR/FATAL）
-- **单元测试**：完整的Google Test单元测试覆盖
+- **Reactor 模式**：基于事件驱动，Single Reactor 架构实现极致单线程性能
+- **高性能 HTTP 服务器**：支持基本路由、请求解析与响应生成
+- **零拷贝 Buffer**：双缓冲区设计，支持 `readv`，避免内存拷贝
+- **spdlog 集成**：多线程安全、异步日志输出，支持 DEBUG/INFO/WARN/ERROR/CRITICAL 日志级别
+- **线程池扩展**：主 Reactor + 工作线程池，灵活应对 CPU 密集型任务
+- **完整连接管理**：`TcpServer` / `TcpConnection` 封装连接生命周期
+- **单元测试覆盖**：基于 Google Test 的核心组件测试（仅用于验证，非运行时依赖）
 
 ## 项目结构
 
@@ -23,30 +25,44 @@ LouisNet/
 ├── src/                      # 源代码
 │   ├── base/                # 基础库
 │   │   ├── noncopyable.h    # 禁用拷贝构造基类
-│   │   ├── Timestamp.h      # 时间戳类
-│   │   ├── Buffer.h         # 缓冲区类
+│   │   ├── Timestamp.h/cc   # 时间戳类
+│   │   ├── Buffer.h/cc     # 缓冲区类
 │   │   ├── ThreadPool.h     # 线程池
-│   │   ├── CurrentThread.h  # 线程局部存储
-│   │   └── LouisLog.h       # 日志系统
+│   │   ├── CurrentThread.h/cc  # 线程局部存储
+│   │   └── LouisLog.h       # 日志系统(已废弃,使用log/Logger)
+│   ├── log/                 # 日志系统
+│   │   └── Logger.h/cc      # spdlog日志封装
 │   └── net/                 # 网络库
-│       ├── InetAddress.h    # 地址类
-│       ├── Socket.h         # 套接字封装
-│       ├── Acceptor.h       # 接收器
-│       ├── TcpServer.h      # TCP服务器
-│       ├── TcpConnection.h  # TCP连接
+│       ├── InetAddress.h/cc # 地址类
+│       ├── Socket.h/cc      # 套接字封装
+│       ├── Acceptor.h/cc    # 接收器
+│       ├── TcpServer.h/cc   # TCP服务器
+│       ├── TcpConnection.h/cc   # TCP连接
+│       ├── http/            # HTTP服务器
+│       │   ├── HttpRequest.h
+│       │   ├── HttpResponse.h/cc
+│       │   ├── HttpContext.h
+│       │   ├── HttpParser.h/cc
+│       │   └── HttpServer.h/cc
 │       └── reactor/         # Reactor核心
-│           ├── EventLoop.h  # 事件循环
-│           ├── Channel.h    # 事件通道
-│           └── Poller.h     # I/O多路复用封装
+│           ├── EventLoop.h/cc
+│           ├── Channel.h/cc
+│           └── Poller.h/cc
 ├── example/                 # 示例代码
-│   ├── echo.cc              # 回显服务器示例
-│   └── EchoServer.h         # 回显服务器实现
-├── tests/                   # 单元测试
-│   └── unit_tests/
-│       ├── test_buffer.cc
-│       ├── test_threadPool.cc
-│       ├── test_channel.cc
-│       └── test_inet_address.cc
+│   ├── echo/                # 回显服务器
+│   │   ├── echo.cc
+│   │   └── EchoServer.h/cc
+│   └── http/                # HTTP服务器示例
+│       └── main.cc
+├── tests/                   # 测试
+│   ├── unit_tests/          # 单元测试
+│   │   ├── test_buffer.cc
+│   │   ├── test_threadPool.cc
+│   │   ├── test_channel.cc
+│   │   ├── test_inet_address.cc
+│   │   └── test_http_response.cc
+│   └── inte_tests/          # 集成测试
+│       └── test_http_parser_with_buffer.cc
 ├── CMakeLists.txt           # 主构建文件
 └── README.md
 ```
@@ -58,6 +74,7 @@ LouisNet/
 - CMake >= 3.21
 - C++17编译器
 - Google Test（测试时需要）
+- spdlog（日志库）
 
 ### 编译步骤
 
@@ -69,23 +86,35 @@ git clone https://github.com/Louisyoung7/LouisNet.git
 cd LouisNet
 
 # 创建构建目录
-mkdir build && cd build
+mkdir build
 
-# 配置CMake
-cmake ..
+# 配置CMake（Debug模式）
+cmake --preset debug && cmake --build --preset debug
 
-# 编译
-make
+# 或配置CMake（Release模式）
+cmake --preset release && cmake --build --preset release
 ```
 
 ### 运行示例
 
+#### Echo 服务器
+
 ```bash
 # 启动回显服务器
-./build/example/echo
+./build/release/example/echo/echo
 
 # 使用telnet测试
-telnet 127.0.0.1 8888
+telnet 127.0.0.1 8080
+```
+
+#### HTTP 服务器
+
+```bash
+# 启动HTTP服务器
+./build/release/example/http/http
+
+# 使用浏览器或curl访问
+curl http://127.0.0.1:8080
 ```
 
 ## 核心组件说明
@@ -162,43 +191,24 @@ TcpServer支持以下回调：
 - **WriteCompleteCallback**：写完成回调
 - **CloseCallback**：连接关闭回调
 
-## 日志系统
-
-日志系统支持多级别和多目标输出：
-
-```cpp
-#include "base/LouisLog.h"
-
-// 使用宏记录日志
-INFO("Server started");
-ERROR_F("Error occurred: %s", msg.c_str());
-
-// 日志级别：TRACE, DEBUG, INFO, WARN, ERROR, FATAL
-```
-
 ## 单元测试
 
-项目包含完整的单元测试：
-
-```bash
-cd build/tests
-./tests
-```
+项目包含完整的单元测试，覆盖了核心组件的功能。
+需要手动指定CMake构建选项，才能编译测试。
 
 测试覆盖：
 - Buffer基本操作
 - 线程池功能
 - Channel事件处理
 - InetAddress地址操作
+- HttpParser解析HTTP请求
 
 ## 技术特点
 
 - **RAII资源管理**：智能指针自动管理资源
 - **线程安全**：使用互斥锁和原子操作保证线程安全
 - **非阻塞I/O**：所有socket设置为非阻塞模式
-- **边缘触发优化**：使用epoll的ET模式提高效率
-- **零拷贝技术**：readv/writev减少数据拷贝
-- **性能优化**：线程局部存储减少系统调用
+- **零拷贝技术**：readv减少数据拷贝
 
 ## 许可证
 
