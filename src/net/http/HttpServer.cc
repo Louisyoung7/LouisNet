@@ -2,6 +2,7 @@
 
 #include "HttpContext.h"
 #include "HttpParser.h"
+#include "log/Logger.h"
 #include "net/InetAddress.h"
 #include "net/http/HttpRequest.h"
 #include "net/reactor/EventLoop.h"
@@ -44,6 +45,7 @@ void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
     auto HttpCtx = std::any_cast<std::shared_ptr<HttpServerContext>>(conn->getContext());
     if (!HttpCtx) {
         // 连接上下文不存在，直接返回
+        logging::warn("[HttpServer] onMessage() connection {} context is null.\n\n", conn->name());
         return;
     }
 
@@ -71,6 +73,9 @@ void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
             // 解析失败，返回400错误
             HttpCtx->ctx.response().setStatusCode(400).setHeader("Connection", "close").setBody("Bad Request");
 
+            logging::warn("[HttpServer] onMessage() connection {} error: {}.\n\n", conn->name(), strerror(errno));
+
+            // 重置上下文
             std::string responseStr = HttpCtx->ctx.response().toString();
 
             // 重置上下文
@@ -96,6 +101,7 @@ void HttpServer::onRequest(HttpContext& ctx) {
             .setStatusCode(404)
             .setBody("Not Found")
             .setHeader("Content-Length", "10");
+        logging::warn("[HttpServer] onRequest() connection {} error: {}.\n\n", ctx.conn()->name(), strerror(errno));
         return;
     }
 

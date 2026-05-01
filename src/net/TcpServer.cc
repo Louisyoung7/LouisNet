@@ -5,7 +5,7 @@
 #include <cassert>
 #include <memory>
 
-#include "base/LouisLog.h"
+#include "log/Logger.h"
 #include "net/Acceptor.h"
 #include "net/TcpConnection.h"
 
@@ -40,16 +40,13 @@ TcpServer::~TcpServer() {
 // 启动服务器
 // 让Acceptor实例开始监听新连接
 void TcpServer::start() {
-    INFO_F("[TcpServer] start() starting to listen on %s.\n\n", listenAddr_.toIpPort().c_str());
+    logging::debug("[TcpServer] start() starting to listen on {}.\n\n", listenAddr_.toIpPort());
     loop_->runInLoop([this]() { acceptor_->listen(); });
 }
 
 // 处理新连接
 // 会被设置为Acceptor实例的新连接回调函数，在后续有新连接时被调用
 void TcpServer::onNewConnection(int sockfd, const InetAddress& peerAddr) {
-    INFO_F("[TcpServer] onNewConnection() new connection from %s sockfd = %d.\n\n", peerAddr.toIpPort().c_str(),
-           sockfd);
-
     try {
         // 创建新TcpConnection实例
         TcpConnectionPtr conn = std::make_shared<TcpConnection>(loop_, sockfd, listenAddr_, peerAddr);
@@ -60,9 +57,7 @@ void TcpServer::onNewConnection(int sockfd, const InetAddress& peerAddr) {
             [this](const TcpConnectionPtr& conn, Buffer& buffer) { messageCallback_(conn, buffer); });
         // 设置写完成回调
         conn->setWriteCompleteCallback([this](const TcpConnectionPtr& conn) {
-            if (writeCompleteCallback_) {
-                writeCompleteCallback_(conn);
-            }
+            if (writeCompleteCallback_) { writeCompleteCallback_(conn); }
         });
         // 设置关闭回调
         conn->setCloseCallback([this](const TcpConnectionPtr& conn) { removeConnection(conn); });
@@ -73,7 +68,7 @@ void TcpServer::onNewConnection(int sockfd, const InetAddress& peerAddr) {
         // 存储实例
         connections_[sockfd] = conn;
     } catch (const std::exception& e) {
-        ERROR_F("[TcpServer] onNewConnection() error: %s.\n\n", e.what());
+        logging::error("[TcpServer] onNewConnection() error: {}.\n\n", e.what());
         // 发生错误时关闭socket
         ::close(sockfd);
     }
@@ -83,12 +78,8 @@ void TcpServer::onNewConnection(int sockfd, const InetAddress& peerAddr) {
 void TcpServer::onConnection(const TcpConnectionPtr& conn) {
     try {
         // 调用上层设置的回调
-        if (connectionCallback_) {
-            connectionCallback_(conn);
-        }
-    } catch (const std::exception& e) {
-        ERROR_F("[TcpServer] onConnection() error: %s.\n\n", e.what());
-    }
+        if (connectionCallback_) { connectionCallback_(conn); }
+    } catch (const std::exception& e) { logging::error("[TcpServer] onConnection() error: {}.\n\n", e.what()); }
 }
 
 // 移除连接

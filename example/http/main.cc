@@ -1,5 +1,4 @@
-#include <iostream>
-
+#include "log/Logger.h"
 #include "net/Acceptor.h"
 #include "net/InetAddress.h"
 #include "net/http/HttpContext.h"
@@ -28,13 +27,9 @@ int main() {
         // 构造echo内容
         std::string echo = "Method: " + std::string(req.method_) + "\r\n" + "Path: " + std::string(req.path_) + "\r\n" +
                            "Headers:\r\n";
-        for (const auto& [key, value] : req.headers_) {
-            echo += key + ": " + value + "\r\n";
-        }
+        for (const auto& [key, value] : req.headers_) { echo += key + ": " + value + "\r\n"; }
 
-        if (!req.body_.empty()) {
-            echo += "Body:\r\n" + req.body_ + "\r\n";
-        }
+        if (!req.body_.empty()) { echo += "Body:\r\n" + req.body_ + "\r\n"; }
 
         resp.setVersion(req.version_)
             .setStatusCode(200)
@@ -46,8 +41,11 @@ int main() {
     // 启动服务器
     server.start();
 
+    // 初始化日志系统
+    logging::init();
+
     // 打印服务器启动信息
-    cout << "HttpServer started on port 8888" << endl << endl;
+    logging::info("HttpServer started on port 8080");
 
     // 启动事件循环
     loop.loop();

@@ -13,7 +13,7 @@
 #include <memory>
 #include <sstream>
 
-#include "base/LouisLog.h"
+#include "log/Logger.h"
 #include "reactor/Channel.h"
 
 using namespace net;
@@ -43,13 +43,13 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd, const InetAddress& loc
     channel_->setCloseCallback([this]() { handleClose(); });
     channel_->setErrorCallback([this]() { handleError(); });
 
-    DEBUG_F("[TcpConnection] TcpConnection() created connection %s.\n\n", name_.c_str());
+    logging::debug("[TcpConnection] TcpConnection() created connection {}.\n\n", name_.c_str());
 }
 TcpConnection::~TcpConnection() {
     // 析构函数调用时，确保连接已经断开
     assert(state_ == StateE::kDisconnected);
 
-    DEBUG_F("[TcpConnection] ~TcpConnecion() destroying connection %s.\n\n", name_.c_str());
+    logging::debug("[TcpConnection] ~TcpConnecion() destroying connection {}.\n\n", name_.c_str());
 }
 
 // 连接建立，更新连接状态为kConnected，使能Channel的读事件，调用连接建立回调
@@ -60,29 +60,21 @@ void TcpConnection::connectionEstablished() {
     // 使能Channel的读事件
     channel_->enableRead();
     // 调用连接建立回调
-    if (connectionCallback_) {
-        connectionCallback_(shared_from_this());
-    }
-
-    DEBUG_F("[TcpConnection] connectionEstablished() connection %s established.\n\n", name_.c_str());
+    if (connectionCallback_) { connectionCallback_(shared_from_this()); }
 }
 
 // 连接关闭，更新连接状态为kDisconnected，关闭Channel的所有事件，并将Channel从所属的EventLoop中移除
 void TcpConnection::connectionDestroyed() {
     // 无论之前是何种状态，现在一律更新为kDisconnected
-    if (state_ != StateE::kDisconnected) {
-        setState(StateE::kDisconnected);
-    }
+    if (state_ != StateE::kDisconnected) { setState(StateE::kDisconnected); }
 
     try {
         // 关闭Channel所有事件
         channel_->disableAll();
         // 从所属的EventLoop中移除
         channel_->remove();
-
-        DEBUG_F("[TcpConnection] connectionDestroyed() connection %s destroyed.\n\n", name_.c_str());
     } catch (const std::exception& e) {
-        ERROR_F("[TcpConnection] connectionDestroyed() error: %s.\n\n", e.what());
+        logging::error("[TcpConnection] connectionDestroyed() error: {}.\n\n", e.what());
     }
 
     // TcpConnection对象的真正销毁由智能指针管理，当引用计数归零，自动调用析构函数
@@ -98,9 +90,7 @@ void TcpConnection::handleRead() {
 
     if (n > 0) {
         // 接收到数据，调用消息接收回调
-        if (messageCallback_) {
-            messageCallback_(shared_from_this(), inputBuffer_);
-        }
+        if (messageCallback_) { messageCallback_(shared_from_this(), inputBuffer_); }
     } else if (n == 0) {
         // 连接关闭，处理关闭事件
         handleClose();
@@ -109,9 +99,16 @@ void TcpConnection::handleRead() {
     else {
         // 更新errno
         errno = savedError;
-        ERROR_F("[TcpConnection] handleRead() error: %s.\n\n", strerror(errno));
-        // 处理错误事件
-        handleError();
+
+        // 处理错误
+        // ECONNRESET: 连接被重置，可能是对端关闭了连接
+        // EPIPE: 连接被关闭，写入数据会返回EPIPE错误
+        if (errno == ECONNRESET || errno == EPIPE) {
+            logging::info("[TcpConnection] handleRead() connection {} closed by peer.\n\n", name_);
+            handleClose();
+        } else {
+            handleError();
+        }
     }
 }
 // 将发送缓冲区的数据写入到sockfd，如果写完，禁用写事件，调用写完成回调
@@ -131,19 +128,14 @@ void TcpConnection::handleWrite() {
                 channel_->disableWrite();
 
                 // 调用写完成回调
-                if (writeCompleteCallback_) {
-                    writeCompleteCallback_(shared_from_this());
-                }
+                if (writeCompleteCallback_) { writeCompleteCallback_(shared_from_this()); }
 
                 // 如果连接正在关闭，调用shutdown关闭写端
-                if (state_ == StateE::kDisconnecting) {
-                    shutdownInLoop();
-                }
+                if (state_ == StateE::kDisconnecting) { shutdownInLoop(); }
             }
         } else {
             // 向sockfd写入错误
             errno = savedError;
-            ERROR_F("[TcpConnection] handleWrite() error: %s.\n\n", strerror(errno));
             // 处理错误事件
             handleError();
         }
@@ -151,9 +143,6 @@ void TcpConnection::handleWrite() {
 }
 // 处理连接关闭，更新连接状态，调用连接销毁回调和连接关闭回调
 void TcpConnection::handleClose() {
-    // assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
-
-    DEBUG_F("[TcpConnection] handleClose() connection %s closing.\n\n", name_.c_str());
     setState(StateE::kDisconnected);
 
     // 创建一个shared_ptr来延长对象生命周期
@@ -166,14 +155,10 @@ void TcpConnection::handleClose() {
     TcpConnectionPtr guardThis(shared_from_this());
 
     // 调用连接销毁回调
-    if (connectionCallback_) {
-        connectionCallback_(guardThis);
-    }
+    if (connectionCallback_) { connectionCallback_(guardThis); }
 
     // 调用连接关闭回调
-    if (closeCallback_) {
-        closeCallback_(guardThis);
-    }
+    if (closeCallback_) { closeCallback_(guardThis); }
 
     connectionDestroyed();
 
@@ -181,20 +166,20 @@ void TcpConnection::handleClose() {
 }
 // 获取并打印sockfd的错误信息，然后调用handleClose()关闭连接
 void TcpConnection::handleError() {
-    int optval;
-    socklen_t optlen = sizeof(optval);
-
     // 获取sockfd的出错时的errno
     // 这里出现的错误相对于handleError()是异步的，不能直接用errno
     // 而是通过getsockopt获取SO_ERROR选项来获取最新的错误状态
-    if (::getsockopt(socket_->fd(), SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) {
-        optval = errno;
-    }
+    int error = socket_->getError();
 
     // 保存错误状态
-    error_ = optval;
-    errno = optval;
-    ERROR_F("[TcpConnection] handleError() connection %s error: %s.\n\n", name_.c_str(), strerror(errno));
+    error_ = error;
+
+    if (error != 0 && error != ECONNRESET && error != EPIPE) {
+        logging::error("[TcpConnection] handleError() connection {} error: {}.\n\n", name_, strerror(error));
+    }
+
+    // 大多数网络错误发生后连接都不可复用，必须关闭连接
+    handleClose();
 }
 
 // 发送string数据，底层直接调用write系统调用
@@ -228,7 +213,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
 
     // 连接已关闭，放弃写入
     if (state_ == StateE::kDisconnected) {
-        DEBUG_F("[TcpConnection] sendInLoop() connection %s is disconnected, give up writing.\n\n", name_.c_str());
+        logging::warn("[TcpConnection] sendInLoop() connection {} is disconnected, give up writing.\n\n", name_);
         return;
     }
 
@@ -247,7 +232,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
             // 写入错误，重置nwrote
             nwrote = 0;
             if (errno != EAGAIN || EWOULDBLOCK) {
-                ERROR_F("[TcpConnection] sendInLoop() connection %s error: %s.\n\n", name_.c_str(), strerror(errno));
+                logging::error("[TcpConnection] sendInLoop() connection {} error: {}.\n\n", name_, strerror(errno));
                 if (errno == EPIPE || errno == ECONNRESET) {
                     // 更新savedError
                     savedError = errno;
@@ -262,9 +247,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
         outputBuffer_.append(static_cast<const char*>(data) + nwrote, remaining);
 
         // 确保开启写事件
-        if (!channel_->isWriting()) {
-            channel_->enableWrite();
-        }
+        if (!channel_->isWriting()) { channel_->enableWrite(); }
     }
 }
 
@@ -279,7 +262,5 @@ void TcpConnection::shutdown() {
 // 在IO线程中关闭连接
 void TcpConnection::shutdownInLoop() {
     // 只有在没有使能写事件（发送缓冲区可能为空时）才关闭写端
-    if (!channel_->isWriting()) {
-        socket_->shutdownWrite();
-    }
+    if (!channel_->isWriting()) { socket_->shutdownWrite(); }
 }

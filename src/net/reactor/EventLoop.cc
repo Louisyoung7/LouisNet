@@ -11,7 +11,7 @@
 
 #include "Channel.h"
 #include "Poller.h"
-#include "base/LouisLog.h"
+#include "log/Logger.h"
 
 using namespace net::reactor;
 
@@ -19,8 +19,8 @@ using namespace net::reactor;
 static int createEventfd() {
     int eventfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (eventfd < 0) {
-        FATAL_F("%s-%s-%d createEventfd() failed to create eventfd: %s\n\n", __FILE__, __func__, __LINE__,
-                strerror(errno));
+        logging::critical("%s-%s-%d createEventfd() failed to create eventfd: {}\n\n", __FILE__, __func__, __LINE__,
+                          strerror(errno));
     }
     return eventfd;
 }
@@ -43,8 +43,7 @@ struct EventLoop::Impl {
         : poller(std::make_unique<Poller>(loop)),
           tid(std::this_thread::get_id()),
           eventfd(createEventfd()),
-          eventChannel(std::make_unique<Channel>(loop, eventfd)) {
-    }
+          eventChannel(std::make_unique<Channel>(loop, eventfd)) {}
 };
 
 // 构造析构
@@ -64,16 +63,13 @@ void EventLoop::loop() {
     impl_->looping = true;
     impl_->quit = false;
 
-    DEBUG("[EventLoop] loop() started.\n\n");
+    logging::debug("[EventLoop] loop() started.\n\n");
 
     while (!impl_->quit) {
         // 填充活跃的Channel列表
         poll(4000, impl_->activeChannels);
         // 遍历活跃的Channel列表
-        for (auto& channel : impl_->activeChannels) {
-            DEBUG_F("[EventLoop] loop() handling event for fd %d.\n\n", channel->fd());
-            channel->handleEvent();
-        }
+        for (auto& channel : impl_->activeChannels) { channel->handleEvent(); }
         // 清空活跃的Channel列表
         impl_->activeChannels.clear();
 
@@ -81,24 +77,18 @@ void EventLoop::loop() {
         doPendingFunctors();
     }
 
-    DEBUG("[EventLoop] loop() exited.\n\n");
+    logging::debug("[EventLoop] loop() exited.\n\n");
     impl_->looping = false;
 }
 
 // 退出事件循环
-void EventLoop::quit() {
-    impl_->quit = true;
-}
+void EventLoop::quit() { impl_->quit = true; }
 
 // 更新Channel
-void EventLoop::updateChannel(Channel* channel) {
-    impl_->poller->updateChannel(channel);
-}
+void EventLoop::updateChannel(Channel* channel) { impl_->poller->updateChannel(channel); }
 
 // 移除Channel
-void EventLoop::removeChannel(Channel* channel) {
-    impl_->poller->removeChannel(channel);
-}
+void EventLoop::removeChannel(Channel* channel) { impl_->poller->removeChannel(channel); }
 
 // 确保回调在loop线程执行
 void EventLoop::runInLoop(Functor cb) {
@@ -116,38 +106,28 @@ void EventLoop::queueInLoop(Functor cb) {
         impl_->tasks.emplace_back(cb);
     }
 
-    if (!isInLoopThread() || impl_->callingPendingFunctors) {
-        wakeup();
-    }
+    if (!isInLoopThread() || impl_->callingPendingFunctors) { wakeup(); }
 }
 
 // 判断是否在loop线程
-bool EventLoop::isInLoopThread() {
-    return impl_->tid == std::this_thread::get_id();
-}
+bool EventLoop::isInLoopThread() { return impl_->tid == std::this_thread::get_id(); }
 
 // 唤醒loop线程
 void EventLoop::wakeup() {
     // 向注册到EventLoop的eventfd写入数据，唤醒对应EventLoop
     uint64_t one{1};
     ssize_t n = ::write(impl_->eventfd, &one, sizeof(one));
-    if (n != sizeof(one)) {
-        ERROR_F("[EventLoop] wakeup() writes %lu bytes instead of 8.\n\n", n);
-    }
+    if (n != sizeof(one)) { logging::error("[EventLoop] wakeup() writes {} bytes instead of 8.\n\n", n); }
 }
 
 void EventLoop::handleRead() {
     uint64_t one = 1;
     ssize_t n = ::read(impl_->eventfd, &one, sizeof(one));
-    if (n != sizeof(one)) {
-        ERROR_F("[EventLoop] handleRead() reads %lu bytes instead of 8.\n\n", n);
-    }
+    if (n != sizeof(one)) { logging::error("[EventLoop] handleRead() reads {} bytes instead of 8.\n\n", n); }
 }
 
 // 调用Poller的poll
-void EventLoop::poll(int timeoutMs, ChannelList& activeChannels) {
-    impl_->poller->poll(timeoutMs, activeChannels);
-}
+void EventLoop::poll(int timeoutMs, ChannelList& activeChannels) { impl_->poller->poll(timeoutMs, activeChannels); }
 
 // 执行待处理任务
 void EventLoop::doPendingFunctors() {
@@ -160,9 +140,7 @@ void EventLoop::doPendingFunctors() {
         tasks.swap(impl_->tasks);
     }
 
-    for (const auto& task : tasks) {
-        task();
-    }
+    for (const auto& task : tasks) { task(); }
 
     impl_->callingPendingFunctors = false;
 }

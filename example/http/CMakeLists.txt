@@ -4,9 +4,11 @@ file(GLOB_RECURSE SRCS ${PROJECT_SOURCE_DIR}/example/http/*.cc)
 add_executable(http ${SRCS})
 
 # 链接主库
-target_link_libraries(http PRIVATE LouidNetLib)
+target_link_libraries(http PRIVATE LouisNetLib spdlog::spdlog pthread)
 
 # 设置包含路径
 target_include_directories(http PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(http PRIVATE ${PROJECT_SOURCE_DIR}/example/http)
+
+
 
