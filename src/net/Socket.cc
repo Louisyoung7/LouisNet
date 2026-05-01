@@ -5,25 +5,21 @@
 #include <unistd.h>
 
 #include "InetAddress.h"
-#include "base/LouisLog.h"
+#include "log/Logger.h"
 
 namespace net {
-Socket::~Socket() {
-    ::close(sockfd_);
-}
+Socket::~Socket() { ::close(sockfd_); }
 
 // 绑定IP and Port
 void Socket::bindAddress(const InetAddress& localAddr) {
     if (::bind(sockfd_, localAddr.getSockaddr(), sizeof(struct sockaddr_in)) < 0) {
-        FATAL_F("[Socket] bindAddress() failed, sockfd: %d.\n\n", sockfd_);
+        logging::critical("[Socket] bindAddress() failed, sockfd: {}.\n\n", sockfd_);
     }
 }
 
 // 设置监听
 void Socket::listen() {
-    if (::listen(sockfd_, SOMAXCONN) < 0) {
-        FATAL_F("[Socket] listen() failed, sockfd: %d.\n\n", sockfd_);
-    }
+    if (::listen(sockfd_, SOMAXCONN) < 0) { logging::critical("[Socket] listen() failed, sockfd: {}.\n\n", sockfd_); }
 }
 
 // 接受连接
@@ -31,16 +27,14 @@ int Socket::accept(InetAddress& peerAddr) {
     socklen_t addrLen = sizeof(struct sockaddr_in);
     int connfd = ::accept4(sockfd_, const_cast<struct sockaddr*>(peerAddr.getSockaddr()), &addrLen,
                            SOCK_NONBLOCK | SOCK_CLOEXEC);
-    if (connfd < 0) {
-        ERROR_F("[Socket] accept() failed, sockfd: %d.\n\n", sockfd_);
-    }
+    if (connfd < 0) { logging::error("[Socket] accept() failed, sockfd: {}.\n\n", sockfd_); }
     return connfd;
 }
 
 // 关闭写端
 void Socket::shutdownWrite() {
     if (::shutdown(sockfd_, SHUT_WR) < 0) {
-        ERROR_F("[Socket] shutdownWrite() failed, sockfd: %d.\n\n", sockfd_);
+        logging::error("[Socket] shutdownWrite() failed, sockfd: {}.\n\n", sockfd_);
     }
 }
 
@@ -63,5 +57,13 @@ void Socket::setReusePort(bool on) {
 void Socket::setKeepAlive(bool on) {
     int optval = on ? 1 : 0;
     ::setsockopt(sockfd_, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval));
+}
+
+// 获取错误码
+int Socket::getError() const {
+    int optval;
+    socklen_t optlen = sizeof(optval);
+    if (::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) { return errno; }
+    return optval;
 }
 }  // namespace net

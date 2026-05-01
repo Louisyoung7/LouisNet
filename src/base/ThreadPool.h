@@ -12,7 +12,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "LouisLog.h"
+#include "log/Logger.h"
 #include "noncopyable.h"
 
 namespace base {
@@ -35,8 +35,7 @@ class ThreadPool : public noncopyable {
                         // 等待条件变量
                         cv_.wait(lock, [this]() { return this->stop_ || !this->tasks_.empty(); });
                         // 如果线程池停止，退出循环
-                        if (this->stop_)
-                            return;
+                        if (this->stop_) return;
 
                         // 获取任务
                         task = std::move(this->tasks_.front());
@@ -56,9 +55,7 @@ class ThreadPool : public noncopyable {
         cv_.notify_all();
 
         for (auto& worker : workers_) {
-            if (worker.joinable()) {
-                worker.join();
-            }
+            if (worker.joinable()) { worker.join(); }
         }
     }
 
@@ -79,9 +76,7 @@ class ThreadPool : public noncopyable {
             std::lock_guard<std::mutex> lock(mutex_);
 
             // 禁止向已停止的线程池添加任务
-            if (stop_) {
-                throw std::runtime_error("Submit in stopped threadPool.");
-            }
+            if (stop_) { throw std::runtime_error("Submit in stopped threadPool."); }
 
             // 将task共享指针捕获并包装成Lambda表达式
             tasks_.emplace([task]() { (*task)(); });
@@ -90,7 +85,7 @@ class ThreadPool : public noncopyable {
         // 通知一个线程
         cv_.notify_one();
 
-        DEBUG("[ThreadPool] submit() added task to threadPool.\n\n");
+        logging::debug("[ThreadPool] submit() added task to threadPool.\n\n");
 
         return result;
     }

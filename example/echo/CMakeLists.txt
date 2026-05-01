@@ -4,7 +4,7 @@ file(GLOB_RECURSE SRCS ${PROJECT_SOURCE_DIR}/example/echo/*.cc)
 add_executable(echo ${SRCS})
 
 # 链接主库
-target_link_libraries(echo PRIVATE LouidNetLib)
+target_link_libraries(echo PRIVATE LouisNetLib spdlog::spdlog pthread)
 
 # 设置包含路径
 target_include_directories(echo PRIVATE ${PROJECT_SOURCE_DIR}/src)

@@ -10,7 +10,7 @@
 #include <cstring>
 
 #include "InetAddress.h"
-#include "base/LouisLog.h"
+#include "log/Logger.h"
 #include "reactor/Channel.h"
 #include "reactor/EventLoop.h"
 
@@ -21,8 +21,8 @@ using namespace net::reactor;
 static int createNonblockingSocket() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
     if (fd < 0) {
-        FATAL_F("%s-%s-%d createNonblockingSocket() failed to create socket: %s\n\n", __FILE__, __func__, __LINE__,
-                strerror(errno));
+        logging::critical("{}-{}-{} createNonblockingSocket() failed to create socket: {}\n\n", __FILE__, __func__,
+                          __LINE__, strerror(errno));
     }
     return fd;
 }
@@ -42,10 +42,10 @@ Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenAddr, bool reusePor
     // 设置Channel的读回调，处理新连接
     acceptChannel_->setReadCallback([this]() { handleRead(); });
 
-    DEBUG_F("[Acceptor] Acceptor() created with listenFd_ = %d\n\n", acceptSocket_->fd());
+    logging::debug("[Acceptor] Acceptor() created with listenFd_ = {}\n\n", acceptSocket_->fd());
 }
 Acceptor::~Acceptor() {
-    DEBUG_F("[Acceptor] ~Acceptor() closing listenFd_ = %d\n\n", acceptSocket_->fd());
+    logging::debug("[Acceptor] ~Acceptor() closing listenFd_ = {}\n\n", acceptSocket_->fd());
     // 关闭监听Channel
     acceptChannel_->disableAll();
     acceptChannel_->remove();
@@ -57,7 +57,6 @@ void Acceptor::listen() {
     acceptSocket_->listen();
     acceptChannel_->enableRead();
     listening_ = true;
-    DEBUG_F("[Acceptor] listen() listenFd_ = %d\n\n", acceptSocket_->fd());
 }
 
 // 处理监听的socket上的读事件（新连接）
@@ -66,9 +65,6 @@ void Acceptor::handleRead() {
     InetAddress peerAddr;
     int connfd = acceptSocket_->accept(peerAddr);
     if (connfd > 0) {
-        DEBUG_F("[Acceptor] handleRead() accepted connection with fd = %d, from %s\n\n", connfd,
-                peerAddr.toIpPort().c_str());
-
         // 调用新连接回调函数
         if (newConnectionCallback_) {
             newConnectionCallback_(connfd, peerAddr);
@@ -78,9 +74,9 @@ void Acceptor::handleRead() {
         }
     } else {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            DEBUG_F("[Acceptor] handleRead() no more connections\n\n");
+            logging::debug("[Acceptor] handleRead() no more connections\n\n");
         } else {
-            ERROR_F("[Acceptor] handleRead() accept() failed with errno = %s\n\n", strerror(errno));
+            logging::error("[Acceptor] handleRead() accept() failed with errno = {}\n\n", strerror(errno));
         }
     }
 }

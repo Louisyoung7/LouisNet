@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "base/LouisLog.h"
+#include "log/Logger.h"
 
 using namespace net;
 using namespace net::reactor;
@@ -24,21 +24,17 @@ EchoServer::EchoServer(EventLoop* loop, const InetAddress& listenAddr, int numTh
 // 启动服务器
 void EchoServer::start() {
     try {
-        INFO_F("[EchoServer] start() starting EchoServer on %s.\n\n", server_->listenAddr().toIpPort().c_str());
-
         server_->start();
-    } catch (const std::exception& e) {
-        ERROR_F("[EchoServer] start() error: %s.\n\n", e.what());
-    }
+    } catch (const std::exception& e) { logging::error("[EchoServer] start() error: {}.\n\n", e.what()); }
 }
 
 // 处理连接状态变化
 // 被设置为TcpServer的连接状态回调，在连接状态变化时输出日志
 void EchoServer::onConnection(const TcpServer::TcpConnectionPtr& conn) {
     if (conn->connected()) {
-        INFO_F("[EchoServer] onConnection() connection %s established.\n\n", conn->name().c_str());
+        logging::debug("[EchoServer] onConnection() connection {} established.\n\n", conn->name());
     } else {
-        INFO_F("[EchoServer] onConnection() connection %s disconnected.\n\n", conn->name().c_str());
+        logging::debug("[EchoServer] onConnection() connection {} disconnected.\n\n", conn->name());
     }
 }
 
@@ -49,8 +45,8 @@ void EchoServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
         // 读取buffer中的所有可读数据到string
         std::string message = buffer.retrieveAllAsString();
 
-        INFO_F("[EchoServer] onMessage() connection %s received %ld bytes: %s.\n\n", conn->name().c_str(),
-               message.size(), message.c_str());
+        logging::debug("[EchoServer] onMessage() connection {} received {} bytes: {}.\n\n", conn->name(),
+                       message.size(), message.c_str());
 
         // 回显数据
         // 这里使用ThreadPool来异步发送数据，避免阻塞EventLoop线程
@@ -60,16 +56,16 @@ void EchoServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
             conn->getLoop()->runInLoop([conn, message]() {
                 if (conn->connected()) {  // 发送前检查连接状态
                     conn->send(message);
-                    DEBUG_F("[EchoServer] onMessage() connection %s sent %ld bytes.\n\n",
-                           conn->name().c_str(), message.size());
+                    logging::debug("[EchoServer] onMessage() connection {} sent {} bytes.\n\n", conn->name(),
+                                   message.size());
                 } else {
-                    DEBUG_F("[EchoServer] onMessage() connection %s disconnected, skip sending.\n\n",
-                           conn->name().c_str());
+                    logging::debug("[EchoServer] onMessage() connection {} disconnected, skip sending.\n\n",
+                                   conn->name());
                 }
             });
         });
     } catch (const std::exception& e) {
-        ERROR_F("[EchoServer] onMessage() error: %s.\n\n", e.what());
+        logging::error("[EchoServer] onMessage() error: {}.\n\n", e.what());
         return;
     }
 }

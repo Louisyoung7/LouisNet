@@ -43,6 +43,9 @@ class Socket {
     // 设置保持连接
     void setKeepAlive(bool on);
 
+    // 获取错误码
+    int getError() const;
+
    private:
 };
 }  // namespace net
