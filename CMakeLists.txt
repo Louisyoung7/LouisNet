@@ -28,12 +28,21 @@ FetchContent_Declare(
 # 确保 spdlog 依赖被下载和编译
 FetchContent_MakeAvailable(spdlog)
 
+# 根据构建类型设置日志级别
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Debug 模式：保留所有日志（包括 trace/debug）
+    add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+else()
+    # Release/RelWithDebInfo/MinSizeRel 模式：仅保留 info 及以上级别
+    add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO)
+endif()
+
 # 添加子目录
 add_subdirectory(src)
 add_subdirectory(example)
 
 # 测试相关配置（默认关闭）
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
 
 enable_testing()
 

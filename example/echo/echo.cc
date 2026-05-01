@@ -3,7 +3,6 @@
 #include "net/InetAddress.h"
 #include "net/reactor/EventLoop.h"
 
-
 int main() {
     // 创建EventLoop
     net::reactor::EventLoop loop;
@@ -16,7 +15,7 @@ int main() {
 
     // 启动服务器
     server.start();
-    
+
     // 初始化日志系统
     logging::init();
 
