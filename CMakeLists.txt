@@ -44,9 +44,13 @@ add_subdirectory(example)
 # 测试相关配置（默认关闭）
 option(BUILD_TESTS "Build tests" OFF)
 
-enable_testing()
+# Debug 构建时自动启用测试
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(BUILD_TESTS ON CACHE BOOL "Build tests" FORCE)
+endif()
 
 if(BUILD_TESTS)
-  # 添加测试子目录
-  add_subdirectory(tests)
+    enable_testing()
+    # 添加测试子目录
+    add_subdirectory(tests)
 endif()

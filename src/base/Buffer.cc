@@ -17,7 +17,7 @@ ssize_t Buffer::readFd(int fd, int* savedErrno) {
     const size_t writable = writableBytes();
 
     // 第一块缓冲区：buffer的可写区域
-    vec[0].iov_base = beginWrite();
+    vec[0].iov_base = writerIt();
     vec[0].iov_len = writable;
     // 第二块缓冲区：extrabuf
     vec[1].iov_base = extrabuf;
@@ -43,30 +43,24 @@ ssize_t Buffer::readFd(int fd, int* savedErrno) {
     return n;
 }
 
-ssize_t Buffer::writeFd(int fd, int* savedErrno) {
-    const size_t readable = readableBytes();
-
-    const ssize_t n = ::write(fd, peek(), readable);
-
-    if (n < 0) {
-        // 出错，保存errno
-        *savedErrno = errno;
-    } else if (static_cast<size_t>(n) <= readable) {
-        // 写出的字节小于可读字节数，更新读索引
-        readerIndex_ += n;
-    } else {
-        // 可读字节全部写出，直接重置读写索引
-        retrieveAll();
-    }
-
-    return n;
-}
-
 void Buffer::makeSpace(size_t len) {
+    // buffer可写入的空间 + 读索引前的预留空间 < 要写入的字节数 + 最小预留字节数（kCheapPrepend：8字节）
     if (writableBytes() + prependableBytes() < len + kCheapPrepend) {
-        // buffer可写入的空间 + 读索引前的预留空间小于要写入的字节数 + 最小预留字节数（kCheapPrepend：8字节）
-        // 扩容，增加len字节容量
-        buffer_.resize(writerIndex_ + len);
+        size_t readable = readableBytes();
+        // 创建一个新的缓冲区，容量为可读数据 + 要写入数据 + 最小预留字节数
+        Buffer other(readable + len);
+        assert(other.peek() == other.begin() + kCheapPrepend);
+        // 将当前可读数据复制到新缓冲区的可写区域中
+        std::copy(begin() + readerIndex_, begin() + writerIndex_, other.peek());
+        // 交换当前缓冲区和新缓冲区
+        swap(other);
+        // 更新读写索引
+        readerIndex_ = kCheapPrepend;
+        writerIndex_ = readerIndex_ + readable;
+        // 确保操作逻辑正确
+        assert(kCheapPrepend + readable == writerIndex_);
+        assert(readable == readableBytes());
+        assert(readerIndex_ == kCheapPrepend);
     } else {
         // 这个情况是，可写入的空间不够，但是如果把前面预留空间多出来的加上就够了
         // 这时可以向前移动可读数据
@@ -78,7 +72,7 @@ void Buffer::makeSpace(size_t len) {
         readerIndex_ = kCheapPrepend;
         writerIndex_ = readerIndex_ + readable;
 
-        // 确保操作逻辑争取
+        // 确保操作逻辑正确
         assert(kCheapPrepend + readable == writerIndex_);
         assert(readable == readableBytes());
     }

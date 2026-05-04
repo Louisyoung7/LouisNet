@@ -12,23 +12,17 @@ namespace {
 // 按/r/n分割行
 std::pair<std::string_view, std::string_view> splitLine(std::string_view data) {
     size_t pos = data.find("\r\n");
-    if (pos == std::string_view::npos) {
-        return {"", data};
-    }
+    if (pos == std::string_view::npos) { return {"", data}; }
     return {data.substr(0, pos), data.substr(pos + 2)};
 }
 
 // 解析请求行: "GET /path HTTP/1.1"
 bool parseRequestLine(std::string_view line, HttpRequest& request) {
     size_t pos1 = line.find(' ');
-    if (pos1 == std::string_view::npos) {
-        return false;
-    }
+    if (pos1 == std::string_view::npos) { return false; }
 
     size_t pos2 = line.find(' ', pos1 + 1);
-    if (pos2 == std::string_view::npos) {
-        return false;
-    }
+    if (pos2 == std::string_view::npos) { return false; }
 
     request.method_ = line.substr(0, pos1);
     request.path_ = line.substr(pos1 + 1, pos2 - pos1 - 1);
@@ -39,25 +33,17 @@ bool parseRequestLine(std::string_view line, HttpRequest& request) {
 
 // 解析头部行: "Key: Value"
 bool parseHeaders(std::string_view line, HttpRequest& request) {
-    if (line.empty()) {
-        return false;
-    }
+    if (line.empty()) { return false; }
 
     size_t pos = line.find(':');
-    if (pos == std::string_view::npos) {
-        return false;
-    }
+    if (pos == std::string_view::npos) { return false; }
     std::string key(line.substr(0, pos));
 
     // 跳过冒号后面的空格
     size_t valStart = pos + 1;
-    while (valStart < line.size() && line[valStart] == ' ') {
-        valStart++;
-    }
+    while (valStart < line.size() && line[valStart] == ' ') { valStart++; }
     std::string val(line.substr(valStart));
-    while (!val.empty() && val.back() == ' ') {
-        val.pop_back();
-    }
+    while (!val.empty() && val.back() == ' ') { val.pop_back(); }
 
     // 头部名转小写
     std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -72,7 +58,7 @@ HttpParser::ParseResult HttpParser::parseRequest(Buffer& buffer, HttpRequest& ou
     size_t parsed = 0;
     auto result = parseCString(buffer.peek(), buffer.readableBytes(), outRequest, parsed);
     // 更新已解析字节数
-    buffer.retrieve(parsed);
+    buffer.consume(parsed);
     return result;
 }
 
@@ -89,9 +75,7 @@ HttpParser::ParseResult HttpParser::parseCString(const char* data, size_t len, H
             auto [line, rest] = splitLine(cur);
 
             // 需要更多数据解析请求行
-            if (line.empty() && rest == cur) {
-                break;
-            }
+            if (line.empty() && rest == cur) { break; }
             // 解析请求行
             if (!parseRequestLine(line, outRequest)) {
                 result = ParseResult::kError;

@@ -119,7 +119,7 @@ void TcpConnection::handleWrite() {
         int savedError = 0;
 
         // 用发送缓冲区向sockfd写入数据
-        ssize_t n = outputBuffer_.writeFd(socket_->fd(), &savedError);
+        ssize_t n = ::write(socket_->fd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
 
         if (n > 0) {
             // 数据写出完了
@@ -197,14 +197,6 @@ void TcpConnection::send(const void* data, size_t len) {
     }
 }
 
-//? 输出缓冲区中的数据发送和直接通过write系统调用快速发送数据的时序逻辑是什么
-// 1.条件检查 ： !channel_->isWriting() && outputBuffer_.readableBytes() == 0
-// (1)确保没有正在进行的写事件
-// (2)确保输出缓冲区中没有任何待发送的数据
-// 2.顺序保证 ：只有在输出缓冲区为空的情况下，当前要发送的数据才是最紧急需要发送的数据
-// 3.原子性处理 ：如果直接 write 不能完全发送，剩余部分会被添加到输出缓冲区的末尾，等待后续发送
-// 4.顺序一致性 ：由于 TCP 协议本身的有序性加上上述逻辑保证，数据的发送顺序与应用程序调用 send 的顺序一致
-
 // 在IO线程中发送数据，底层直接调用write系统调用
 void TcpConnection::sendInLoop(const void* data, size_t len) {
     ssize_t nwrote = 0;      ///< 记录已经写入多少数据到sockfd
@@ -217,7 +209,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
         return;
     }
 
-    // 当输出缓冲区为空（没有任何待发送的数据），且没有正在写事件，优先尝试立即写入
+    // 当输出缓冲区为空（没有任何待发送的数据），且没有正在写事件，优先尝试立即写入数据到sockfd
     if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0) {
         nwrote = ::write(socket_->fd(), data, len);
 
