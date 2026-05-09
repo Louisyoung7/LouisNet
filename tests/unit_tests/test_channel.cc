@@ -99,8 +99,8 @@ TEST_F(ChannelTest, SetCallbacksAndHandleEvents) {
     channel_->setErrorCallback([&]() { errorCalled = true; });
 
     // 测试读事件
-    channel_->setRevents(net::reactor::Channel::kReadEvent);
-    channel_->handleEvent();
+    channel_->setRevents(EPOLLIN | EPOLLPRI);
+    channel_->handleEvents();
     EXPECT_TRUE(readCalled);
     EXPECT_FALSE(writeCalled);
     EXPECT_FALSE(closeCalled);
@@ -113,8 +113,8 @@ TEST_F(ChannelTest, SetCallbacksAndHandleEvents) {
     errorCalled = false;
 
     // 测试写事件
-    channel_->setRevents(net::reactor::Channel::kWriteEvent);
-    channel_->handleEvent();
+    channel_->setRevents(EPOLLOUT);
+    channel_->handleEvents();
     EXPECT_FALSE(readCalled);
     EXPECT_TRUE(writeCalled);
     EXPECT_FALSE(closeCalled);
@@ -127,8 +127,8 @@ TEST_F(ChannelTest, SetCallbacksAndHandleEvents) {
     errorCalled = false;
 
     // 测试关闭事件
-    channel_->setRevents(net::reactor::Channel::kCloseEvent);
-    channel_->handleEvent();
+    channel_->setRevents(EPOLLHUP);
+    channel_->handleEvents();
     EXPECT_FALSE(readCalled);
     EXPECT_FALSE(writeCalled);
     EXPECT_TRUE(closeCalled);
@@ -141,8 +141,8 @@ TEST_F(ChannelTest, SetCallbacksAndHandleEvents) {
     errorCalled = false;
 
     // 测试错误事件
-    channel_->setRevents(net::reactor::Channel::kErrorEvent);
-    channel_->handleEvent();
+    channel_->setRevents(EPOLLERR);
+    channel_->handleEvents();
     EXPECT_FALSE(readCalled);
     EXPECT_FALSE(writeCalled);
     EXPECT_FALSE(closeCalled);
@@ -153,4 +153,14 @@ TEST_F(ChannelTest, SetCallbacksAndHandleEvents) {
     writeCalled = false;
     closeCalled = false;
     errorCalled = false;
+}
+
+// 测试tie方法
+TEST_F(ChannelTest, TieMethod) {
+    struct TestObject {
+        bool destroyed = false;
+    };
+
+    auto obj = std::make_shared<TestObject>();
+    channel_->tie(obj);
 }

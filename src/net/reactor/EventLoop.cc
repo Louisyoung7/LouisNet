@@ -52,8 +52,9 @@ EventLoop::EventLoop() : impl_(std::make_unique<Impl>(this)) {
     impl_->eventChannel->setReadCallback([this]() { handleRead(); });
     // 注册事件通知Channel到epoll，开启读事件监听
     impl_->eventChannel->enableRead();
+    
 }
-EventLoop::~EventLoop() = default;
+EventLoop::~EventLoop() { impl_->eventChannel->remove(); }
 
 // 运行事件循环
 void EventLoop::loop() {
@@ -68,8 +69,8 @@ void EventLoop::loop() {
     while (!impl_->quit) {
         // 填充活跃的Channel列表
         poll(4000, impl_->activeChannels);
-        // 遍历活跃的Channel列表
-        for (auto& channel : impl_->activeChannels) { channel->handleEvent(); }
+        // 遍历活跃的Channel列表，处理事件
+        for (auto& channel : impl_->activeChannels) { channel->handleEvents(); }
         // 清空活跃的Channel列表
         impl_->activeChannels.clear();
 

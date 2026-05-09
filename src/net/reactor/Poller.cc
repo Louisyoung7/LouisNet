@@ -76,7 +76,11 @@ void Poller::updateChannel(Channel* channel) {
         }
         // 有关注事件，更新epoll事件
         else {
-            modFd(fd, channel->events());
+            if (channel->index() == Channel::kDeleted) {
+                addFd(fd, channel->events());
+            } else {
+                modFd(fd, channel->events());
+            }
             channel->setIndex(Channel::kAdded);
         }
     }
@@ -86,8 +90,11 @@ void Poller::updateChannel(Channel* channel) {
 void Poller::removeChannel(Channel* channel) {
     // 获取fd
     int fd = channel->fd();
-    // channel从Poller移除前，应在map中存在
-    assert(fdMap_.find(fd) != fdMap_.end());
+    // 如果channel不在map中，直接返回
+    if (fdMap_.find(fd) == fdMap_.end()) {
+        channel->setIndex(Channel::kNew);
+        return;
+    }
     assert(fdMap_[fd] == channel);
 
     // 确保取消关注所有事件
