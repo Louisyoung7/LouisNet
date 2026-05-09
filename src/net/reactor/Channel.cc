@@ -10,26 +10,39 @@ using namespace net::reactor;
 // 构造析构
 Channel::Channel(EventLoop* loop, int fd)
     : loop_(loop), fd_(fd), events_(kNoneEvent), revents_(kNoneEvent), index_(kNew) {}
-Channel::~Channel() {
-    assert(index_ == kNew);
-    // 取消关注所有事件
-    disableAll();
-    remove();
+Channel::~Channel() { remove(); }
+
+// 处理事件
+void Channel::handleEvents() {
+    std::shared_ptr<void> guard;
+    if (tied_) {
+        guard = tie_.lock();
+        if (guard) { handler(); }
+    } else {
+        handler();
+    }
 }
 
-void Channel::handleEvent() {
-    // 执行实际发生的事件回调
-    if (revents_ & kReadEvent) {
-        if (readCallback_) { readCallback_(); }
-    }
-    if (revents_ & kWriteEvent) {
-        if (writeCallback_) { writeCallback_(); }
-    }
-    if (revents_ & kCloseEvent) {
+// 处理真实返回的事件
+void Channel::handler() {
+    // 处理关闭事件
+    if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
         if (closeCallback_) { closeCallback_(); }
     }
-    if (revents_ & kErrorEvent) {
+
+    // 处理错误事件
+    if (revents_ & EPOLLERR) {
         if (errorCallback_) { errorCallback_(); }
+    }
+
+    // 处理读取事件
+    if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
+        if (readCallback_) { readCallback_(); }
+    }
+
+    // 处理写入事件
+    if (revents_ & EPOLLOUT) {
+        if (writeCallback_) { writeCallback_(); }
     }
 }
 
@@ -38,3 +51,9 @@ void Channel::remove() { loop_->removeChannel(this); }
 
 // 更新EventLoop中Channel的事件关注
 void Channel::update() { loop_->updateChannel(this); }
+
+// 绑定回调执行对象
+void Channel::tie(const std::shared_ptr<void>& obj) {
+    tie_ = obj;
+    tied_ = true;
+}
