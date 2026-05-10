@@ -17,15 +17,6 @@
 using namespace net;
 using namespace net::reactor;
 
-// 创建非阻塞的socket文件描述符
-static int createNonblockingSocket() {
-    int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-    if (fd < 0) {
-        logging::critical("{}-{}-{} createNonblockingSocket() failed to create socket: {}\n\n", __FILE__, __func__,
-                          __LINE__, strerror(errno));
-    }
-    return fd;
-}
 // 构造析构
 Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenAddr, bool reusePort)
     : loop_(loop),

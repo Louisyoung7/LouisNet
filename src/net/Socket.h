@@ -3,6 +3,12 @@
 namespace net {
 class InetAddress;
 
+// 创建非阻塞的socket文件描述符
+extern int createNonblockingSocket();
+
+// 连接对端
+extern int connectPeer(int sockfd, const InetAddress& peerAddr);
+
 // 封装套接字类
 // 1.利用RAII自动管理资源
 // 2.封装套接字，类型安全，避免误用（类型转换和拷贝操作）
@@ -13,14 +19,11 @@ class Socket {
     const int sockfd_;
 
    public:
-    explicit Socket(int sockfd) : sockfd_(sockfd) {
-    }
+    explicit Socket(int sockfd) : sockfd_(sockfd) {}
     ~Socket();
 
     // 返回套接字
-    int fd() const {
-        return sockfd_;
-    }
+    int fd() const { return sockfd_; }
 
     // 绑定IP and Port
     void bindAddress(const InetAddress& localAddr);

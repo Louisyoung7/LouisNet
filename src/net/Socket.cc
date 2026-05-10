@@ -8,6 +8,21 @@
 #include "log/Logger.h"
 
 namespace net {
+// 创建非阻塞的socket文件描述符
+int createNonblockingSocket() {
+    int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+    if (fd < 0) {
+        logging::critical("{}-{}-{} createNonblockingSocket() failed to create socket: {}\n\n", __FILE__, __func__,
+                          __LINE__, strerror(errno));
+    }
+    return fd;
+}
+
+// 连接对端
+int connectPeer(int sockfd, const InetAddress& peerAddr) {
+    return ::connect(sockfd, peerAddr.getSockaddr(), sizeof(struct sockaddr_in));
+}
+
 Socket::~Socket() { ::close(sockfd_); }
 
 // 绑定IP and Port
