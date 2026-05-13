@@ -3,8 +3,8 @@
 #include <functional>
 #include <memory>
 
-#include "Socket.h"
 #include "base/noncopyable.h"
+#include "net/Socket.h"
 
 namespace net {
 
@@ -35,17 +35,13 @@ class Acceptor : public base::noncopyable {
     ~Acceptor();
 
     // 设置新连接回调函数
-    void setNewConnectionCallback(NewConnectionCallback callback) {
-        newConnectionCallback_ = std::move(callback);
-    }
+    void setNewConnectionCallback(NewConnectionCallback callback) { newConnectionCallback_ = std::move(callback); }
 
     // 开始监听
     void listen();
 
     // 是否正在监听
-    bool listening() const {
-        return listening_;
-    }
+    bool listening() const { return listening_; }
 
    private:
     // 处理监听的socket上的读事件（新连接）

@@ -2,9 +2,9 @@
 
 #include <cassert>
 
-#include "Socket.h"
-#include "reactor/Channel.h"
-#include "reactor/EventLoop.h"
+#include "net/SocketsOps.h"
+#include "net/reactor/Channel.h"
+#include "net/reactor/EventLoop.h"
 
 using namespace net;
 
@@ -54,9 +54,9 @@ void Connector::stopInLoop() {
 // 创建socket并尝试连接对端
 void Connector::connect() {
     // 创建非阻塞的socket
-    int sockfd = createNonblockingSocket();
+    int sockfd = sockets::createNonblockingSocket();
     // 连接对端
-    if (connectPeer(sockfd, serverAddr_) == 0) {
+    if (sockets::connect(sockfd, serverAddr_) == 0) {
         connecting(sockfd);
     } else {
         ::close(sockfd);

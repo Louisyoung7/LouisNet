@@ -1,13 +1,9 @@
 #pragma once
 
+#include "base/noncopyable.h"
+
 namespace net {
 class InetAddress;
-
-// 创建非阻塞的socket文件描述符
-extern int createNonblockingSocket();
-
-// 连接对端
-extern int connectPeer(int sockfd, const InetAddress& peerAddr);
 
 // 封装套接字类
 // 1.利用RAII自动管理资源
@@ -15,7 +11,7 @@ extern int connectPeer(int sockfd, const InetAddress& peerAddr);
 // 3.提供语义明确的API
 // 4.封装复杂的accept4系统调用
 
-class Socket {
+class Socket : public base::noncopyable {
     const int sockfd_;
 
    public:
