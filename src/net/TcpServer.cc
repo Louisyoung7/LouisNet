@@ -15,11 +15,8 @@ using namespace base;
 
 // 构造函数
 // 初始化TcpServer，并设置Acceptor实例的新连接回调函数
-TcpServer::TcpServer(EventLoop* loop, const InetAddress& listenAddr)
-    : loop_(loop),
-      listenAddr_(listenAddr),
-      name_("TcpServer@" + listenAddr.toIpPort()),
-      acceptor_(std::make_unique<Acceptor>(loop, listenAddr, true)) {
+TcpServer::TcpServer(EventLoop* loop, const InetAddress& listenAddr, const std::string& name)
+    : loop_(loop), listenAddr_(listenAddr), name_(name), acceptor_(std::make_unique<Acceptor>(loop, listenAddr, true)) {
     // 设置Acceptor实例的新连接回调函数
     // 新连接回调函数需要Acceptor获取的通信套接字和对端地址作为参数
     acceptor_->setNewConnectionCallback(
