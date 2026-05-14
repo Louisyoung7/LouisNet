@@ -107,6 +107,7 @@ class Channel : public base::noncopyable {
     int index_;                // Channel在Poller中的状态
     std::weak_ptr<void> tie_;  // 回调执行对象的弱指针，用于绑定回调执行对象
     bool tied_;                // 是否绑定回调执行对象
+    bool isInLoop_;             // 是否在EventLoop中
 
     // 回调函数
     EventCallback readCallback_;

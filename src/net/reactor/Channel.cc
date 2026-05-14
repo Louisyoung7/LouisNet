@@ -9,8 +9,8 @@ using namespace net::reactor;
 
 // 构造析构
 Channel::Channel(EventLoop* loop, int fd)
-    : loop_(loop), fd_(fd), events_(kNoneEvent), revents_(kNoneEvent), index_(kNew) {}
-Channel::~Channel() { remove(); }
+    : loop_(loop), fd_(fd), events_(kNoneEvent), revents_(kNoneEvent), index_(kNew), isInLoop_(false) {}
+Channel::~Channel() { assert(!isInLoop_); }
 
 // 处理事件
 void Channel::handleEvents() {
@@ -47,10 +47,16 @@ void Channel::handler() {
 }
 
 // 从EventLoop中移除Channel
-void Channel::remove() { loop_->removeChannel(this); }
+void Channel::remove() {
+    isInLoop_ = false;
+    loop_->removeChannel(this);
+}
 
 // 更新EventLoop中Channel的事件关注
-void Channel::update() { loop_->updateChannel(this); }
+void Channel::update() {
+    isInLoop_ = true;
+    loop_->updateChannel(this);
+}
 
 // 绑定回调执行对象
 void Channel::tie(const std::shared_ptr<void>& obj) {
