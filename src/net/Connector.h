@@ -6,6 +6,7 @@
 
 #include "base/noncopyable.h"
 #include "net/InetAddress.h"
+#include "net/reactor/Channel.h"
 
 namespace net {
 namespace reactor {
@@ -17,8 +18,7 @@ class Connector : public base::noncopyable, public std::enable_shared_from_this<
    public:
     using NewConnectionCallback = std::function<void(int sockfd)>;
 
-    Connector(reactor::EventLoop* loop, const InetAddress& serverAddr)
-        : loop_(loop), serverAddr_(serverAddr), connected_(false), state_(State::kDisconnected) {}
+    Connector(reactor::EventLoop* loop, const InetAddress& serverAddr);
     ~Connector() = default;
 
     // 启动连接

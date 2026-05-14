@@ -1,6 +1,5 @@
 #include "EchoServer.h"
 
-#include <chrono>
 #include <memory>
 #include <string>
 
@@ -11,8 +10,8 @@ using namespace net::reactor;
 using namespace base;
 
 // 构造函数
-EchoServer::EchoServer(EventLoop* loop, const InetAddress& listenAddr, int numThreads)
-    : server_(std::make_unique<TcpServer>(loop, listenAddr)), threadPool_(std::make_unique<ThreadPool>(numThreads)) {
+EchoServer::EchoServer(EventLoop* loop, const InetAddress& listenAddr)
+    : server_(std::make_unique<TcpServer>(loop, listenAddr)) {
     // 设置消息接收回调
     server_->setMessageCallback(
         [this](const TcpServer::TcpConnectionPtr& conn, Buffer& buffer) { onMessage(conn, buffer); });
@@ -45,25 +44,11 @@ void EchoServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
         // 读取buffer中的所有可读数据到string
         std::string message = buffer.retrieveAllAsString();
 
-        logging::debug("[EchoServer] onMessage() connection {} received {} bytes: {}.\n\n", conn->name(),
-                       message.size(), message.c_str());
+        logging::info("[EchoServer] onMessage() connection {} received {} bytes: {}.\n\n", conn->name(), message.size(),
+                      message.c_str());
 
         // 回显数据
-        // 这里使用ThreadPool来异步发送数据，避免阻塞EventLoop线程
-        threadPool_->submit([conn, message]() {
-            // 模拟耗时操作，如数据库查询、文件写入等
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            conn->getLoop()->runInLoop([conn, message]() {
-                if (conn->connected()) {  // 发送前检查连接状态
-                    conn->send(message);
-                    logging::debug("[EchoServer] onMessage() connection {} sent {} bytes.\n\n", conn->name(),
-                                   message.size());
-                } else {
-                    logging::debug("[EchoServer] onMessage() connection {} disconnected, skip sending.\n\n",
-                                   conn->name());
-                }
-            });
-        });
+        conn->send(message);
     } catch (const std::exception& e) {
         logging::error("[EchoServer] onMessage() error: {}.\n\n", e.what());
         return;

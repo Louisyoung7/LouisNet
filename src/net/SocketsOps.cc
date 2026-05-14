@@ -19,12 +19,7 @@ int sockets::createNonblockingSocket() {
 
 // 连接对端
 int sockets::connect(int sockfd, const InetAddress& peerAddr) {
-    int ret = ::connect(sockfd, peerAddr.getSockaddr(), sizeof(struct sockaddr_in));
-    if (ret < 0) {
-        logging::critical("{}-{}-{} connect() failed to connect to {}: {}\n\n", __FILE__, __func__, __LINE__,
-                          peerAddr.toIpPort(), strerror(errno));
-    }
-    return ret;
+    return ::connect(sockfd, peerAddr.getSockaddr(), sizeof(struct sockaddr_in));
 }
 
 // 获取本端地址类

@@ -1,5 +1,6 @@
 #include "TcpClient.h"
 
+#include "log/Logger.h"
 #include "net/Connector.h"
 #include "net/InetAddress.h"
 #include "net/SocketsOps.h"
@@ -18,8 +19,9 @@ void removeConnection(EventLoop* loop, const TcpConnectionPtr& conn) {
 }  // namespace
 
 TcpClient::TcpClient(reactor::EventLoop* loop, const InetAddress& serverAddr, const std::string& name)
-    : loop_(loop), connector_(std::make_unique<Connector>(loop, serverAddr)), name_(name), nextConnId_(1) {
+    : loop_(loop), connector_(std::make_shared<Connector>(loop, serverAddr)), name_(name), nextConnId_(1) {
     connector_->setNewConnectionCallback([this](int sockfd) { onNewConnection(sockfd); });
+    logging::info("[TcpClient] TcpClient() serverAddr: {}\n\n", serverAddr.toIpPort());
 }
 
 TcpClient::~TcpClient() {

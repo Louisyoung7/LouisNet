@@ -2,11 +2,17 @@
 
 #include <cassert>
 
+#include "log/Logger.h"
 #include "net/SocketsOps.h"
 #include "net/reactor/Channel.h"
 #include "net/reactor/EventLoop.h"
 
 using namespace net;
+
+Connector::Connector(reactor::EventLoop* loop, const InetAddress& serverAddr)
+    : loop_(loop), serverAddr_(serverAddr), connected_(false), state_(State::kDisconnected) {
+    logging::debug("[Connector] Connector() serverAddr: {}\n\n", serverAddr_.toIpPort());
+}
 
 // 启动连接
 void Connector::start() {
@@ -56,9 +62,13 @@ void Connector::connect() {
     // 创建非阻塞的socket
     int sockfd = sockets::createNonblockingSocket();
     // 连接对端
-    if (sockets::connect(sockfd, serverAddr_) == 0) {
+    int ret = sockets::connect(sockfd, serverAddr_);
+    int savedErrno = (ret == 0) ? 0 : errno;
+    if (savedErrno == 0 || savedErrno == EINPROGRESS) {
         connecting(sockfd);
     } else {
+        logging::error("[Connector] connect() failed to connect to {}: {}\n\n", serverAddr_.toIpPort(),
+                       strerror(savedErrno));
         ::close(sockfd);
     }
 }
@@ -81,6 +91,7 @@ int Connector::getSocket() {
     channel_->disableAll();
     channel_->remove();
     int sockfd = channel_->fd();
+    logging::debug("[Connector] getSocket() sockfd: {}\n\n", sockfd);
     // 不能在此处重置Channel，当前可能位于Channel的handleEvents中
     // 需要 queueInLoop 强制在Loop线程的任务队列延迟执行
     loop_->queueInLoop([this]() { resetChannel(); });
@@ -88,7 +99,10 @@ int Connector::getSocket() {
 }
 
 // 重置Channel
-void Connector::resetChannel() { channel_.reset(); }
+void Connector::resetChannel() {
+    channel_.reset();
+    logging::debug("[Connector] resetChannel() sockfd reset.\n\n");
+}
 
 // 处理写事件
 // 取出已连接的socket fd，调用新连接回调函数

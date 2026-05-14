@@ -5,6 +5,8 @@
 #include <mutex>
 #include <string>
 
+#include "net/TcpConnection.h"
+
 namespace base {
 class Buffer;
 }
@@ -20,8 +22,8 @@ class InetAddress;
 
 class TcpClient {
    private:
-    using ConnectorPtr = std::unique_ptr<Connector>;
-    using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+    using ConnectorPtr = std::shared_ptr<Connector>;
+    using TcpConnectionPtr = net::TcpConnection::TcpConnectionPtr;
 
     using ConnectionCallback = std::function<void(const TcpConnectionPtr&)>;
     using MessageCallback = std::function<void(const TcpConnectionPtr&, base::Buffer&)>;
