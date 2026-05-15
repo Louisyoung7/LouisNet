@@ -3,15 +3,18 @@
 #include "net/InetAddress.h"
 #include "net/reactor/EventLoop.h"
 
+using namespace net;
+using namespace net::reactor;
+
 int main() {
     // 创建EventLoop
-    net::reactor::EventLoop loop;
+    EventLoop loop;
 
     // 配置本端地址
-    net::InetAddress listenAddr(8080);
+    InetAddress listenAddr(8080);
 
-    // 创建EchoServer，指定线程数为4
-    EchoServer server(&loop, listenAddr, 4);
+    // 创建EchoServer
+    EchoServer server(&loop, listenAddr);
 
     // 启动服务器
     server.start();

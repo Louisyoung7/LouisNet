@@ -1,36 +1,26 @@
 #include "Acceptor.h"
 
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
 #include <unistd.h>
 
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
 
-#include "InetAddress.h"
 #include "log/Logger.h"
-#include "reactor/Channel.h"
-#include "reactor/EventLoop.h"
+#include "net/InetAddress.h"
+#include "net/SocketsOps.h"
+#include "net/reactor/Channel.h"
+#include "net/reactor/EventLoop.h"
 
 using namespace net;
 using namespace net::reactor;
 
-// 创建非阻塞的socket文件描述符
-static int createNonblockingSocket() {
-    int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-    if (fd < 0) {
-        logging::critical("{}-{}-{} createNonblockingSocket() failed to create socket: {}\n\n", __FILE__, __func__,
-                          __LINE__, strerror(errno));
-    }
-    return fd;
-}
 // 构造析构
 Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenAddr, bool reusePort)
     : loop_(loop),
       listening_(false),
-      acceptSocket_(std::make_unique<Socket>(createNonblockingSocket())),
+      acceptSocket_(std::make_unique<Socket>(sockets::createNonblockingSocket())),
       acceptChannel_(std::make_unique<Channel>(loop, acceptSocket_->fd())) {
     // 绑定IP and Port
     acceptSocket_->bindAddress(listenAddr);

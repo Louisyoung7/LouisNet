@@ -95,6 +95,7 @@ void Poller::removeChannel(Channel* channel) {
         channel->setIndex(Channel::kNew);
         return;
     }
+
     assert(fdMap_[fd] == channel);
 
     // 确保取消关注所有事件

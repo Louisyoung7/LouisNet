@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base/noncopyable.h"
+
 namespace net {
 class InetAddress;
 
@@ -9,18 +11,15 @@ class InetAddress;
 // 3.提供语义明确的API
 // 4.封装复杂的accept4系统调用
 
-class Socket {
+class Socket : public base::noncopyable {
     const int sockfd_;
 
    public:
-    explicit Socket(int sockfd) : sockfd_(sockfd) {
-    }
+    explicit Socket(int sockfd) : sockfd_(sockfd) {}
     ~Socket();
 
     // 返回套接字
-    int fd() const {
-        return sockfd_;
-    }
+    int fd() const { return sockfd_; }
 
     // 绑定IP and Port
     void bindAddress(const InetAddress& localAddr);

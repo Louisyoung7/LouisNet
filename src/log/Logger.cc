@@ -3,8 +3,8 @@
 #include <memory>
 
 #include "spdlog/async.h"
-#include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/dist_sink.h"
+#include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 using namespace spdlog;

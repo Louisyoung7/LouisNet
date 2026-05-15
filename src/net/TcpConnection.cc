@@ -11,7 +11,6 @@
 #include <cstring>
 #include <exception>
 #include <memory>
-#include <sstream>
 
 #include "log/Logger.h"
 #include "reactor/Channel.h"
@@ -19,19 +18,16 @@
 using namespace net;
 using namespace net::reactor;
 
-TcpConnection::TcpConnection(EventLoop* loop, int sockfd, const InetAddress& localAddr, const InetAddress& peerAddr)
+TcpConnection::TcpConnection(EventLoop* loop, int sockfd, const InetAddress& localAddr, const InetAddress& peerAddr,
+                             const std::string& name)
     : loop_(loop),
       socket_(std::make_unique<Socket>(sockfd)),
+      name_(name),
       state_(StateE::kConnecting),
       error_(0),
       channel_(std::make_unique<Channel>(loop, sockfd)),
       localAddr_(localAddr),
       peerAddr_(peerAddr) {
-    // 生成连接名称
-    std::ostringstream oss;
-    oss << "conn-" << socket_->fd() << "-" << peerAddr.toIpPort();
-    name_ = oss.str();
-
     // 默认设置TCP_NODELAY选项，减少延迟
     socket_->setTcpNoDelay(true);
     // 设置保持连接选项，防止连接超时

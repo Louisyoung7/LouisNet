@@ -30,7 +30,7 @@ class TcpServer : public base::noncopyable {
 
     reactor::EventLoop* loop_;                     ///< 所属的EventLoop
     const net::InetAddress listenAddr_;            ///< 监听地址
-    std::string name_;                             ///< 服务器名称
+    const std::string name_;                       ///< 服务器名称
     std::unique_ptr<net::Acceptor> acceptor_;      ///< 接收器实例
     std::map<int, TcpConnectionPtr> connections_;  ///< 存储连接实例
 
@@ -40,7 +40,7 @@ class TcpServer : public base::noncopyable {
 
    public:
     // 构造函数
-    TcpServer(reactor::EventLoop* loop, const net::InetAddress& listenAddr);
+    TcpServer(reactor::EventLoop* loop, const net::InetAddress& listenAddr, const std::string& name = "TcpServer");
     // 析构函数
     ~TcpServer();
 
