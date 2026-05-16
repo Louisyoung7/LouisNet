@@ -26,11 +26,12 @@ TcpServer::TcpServer(EventLoop* loop, const InetAddress& listenAddr, const std::
 // 析构函数
 // 将仍存储在TcpServer的所有TcpConnection连接实例销毁
 TcpServer::~TcpServer() {
-    for (auto& conn : connections_) {
-        TcpConnectionPtr ptr(conn.second);
-        ptr.reset();
+    for (auto& item : connections_) {
+        TcpConnectionPtr conn(item.second);
+        item.second.reset();
         // 在IO线程销毁连接
-        loop_->runInLoop([ptr]() { ptr->connectionDestroyed(); });
+        conn->getLoop()->runInLoop([conn]() { conn->connectionDestroyed(); });
+        conn.reset();
     }
 }
 
