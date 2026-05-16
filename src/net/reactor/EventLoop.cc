@@ -52,9 +52,12 @@ EventLoop::EventLoop() : impl_(std::make_unique<Impl>(this)) {
     impl_->eventChannel->setReadCallback([this]() { handleRead(); });
     // 注册事件通知Channel到epoll，开启读事件监听
     impl_->eventChannel->enableRead();
-    
 }
-EventLoop::~EventLoop() { impl_->eventChannel->remove(); }
+EventLoop::~EventLoop() {
+    impl_->eventChannel->disableAll();
+    impl_->eventChannel->remove();
+    ::close(impl_->eventfd);
+}
 
 // 运行事件循环
 void EventLoop::loop() {
