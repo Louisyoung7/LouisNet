@@ -21,21 +21,14 @@ int main() {
 
     // 注册路径对应的请求处理回调函数
     server.registerHandler("/", [](HttpContext& ctx) {
-        const auto& req = ctx.request();
         auto& resp = ctx.response();
 
         // 构造echo内容
-        std::string echo = "Method: " + std::string(req.method_) + "\r\n" + "Path: " + std::string(req.path_) + "\r\n" +
-                           "Headers:\r\n";
-        for (const auto& [key, value] : req.headers_) { echo += key + ": " + value + "\r\n"; }
-
-        if (!req.body_.empty()) { echo += "Body:\r\n" + req.body_ + "\r\n"; }
-
-        resp.setVersion(req.version_)
+        resp.setVersion("HTTP/1.1")
             .setStatusCode(200)
             .setHeader("Content-Type", "text/plain")
-            .setHeader("Content-Length", std::to_string(echo.size()))
-            .setBody(echo);
+            .setHeader("Content-Length", std::to_string(0))
+            .setBody("");
     });
 
     // 启动服务器

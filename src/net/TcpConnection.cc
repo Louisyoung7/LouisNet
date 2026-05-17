@@ -156,8 +156,6 @@ void TcpConnection::handleClose() {
     // 调用连接关闭回调
     if (closeCallback_) { closeCallback_(guardThis); }
 
-    connectionDestroyed();
-
     // 所有回调执行完，这时对象的生命周期才结束，自动销毁（前提是没有其他引用）
 }
 // 获取并打印sockfd的错误信息，然后调用handleClose()关闭连接
