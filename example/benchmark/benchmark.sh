@@ -16,11 +16,11 @@ if ! ss -lnt | grep -q ":${PORT} "; then
 fi
 
 # 创建结果目录
-# RESULT_DIR="wrk_results_$(date +%Y%m%d_%H%M%S)"
-# mkdir -p "$RESULT_DIR"
+RESULT_DIR="wrk_results_$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$RESULT_DIR"
 
 # 汇总文件
-# SUMMARY_FILE="${RESULT_DIR}/summary.txt"
+SUMMARY_FILE="${RESULT_DIR}/summary.txt"
 
 # 输出颜色
 GREEN='\033[0;32m'
@@ -29,15 +29,17 @@ NC='\033[0m'
 # -------------------- 梯度定义 --------------------
 # 每组测试: 线程数 连接数 持续时间(秒)
 # 注意：本地回环且 4C8G，连接数和线程数不宜过高
+
+# 从低压力到高压力
 BENCHMARKS=(
-    # "8 4000 15"
-    # "8 2000 15"
-    # "4 2000 15"
-    # "4 1000 15"
-    # "2 1000 10"
-    # "2 500 10"
-    "1 500 10"
     "1 100 10"
+    "1 500 10"
+    "2 500 10"
+    "2 1000 10"
+    "4 1000 15"
+    "4 2000 15"
+    "8 2000 15"
+    "8 4000 15"
 )
 
 # -------------------- 开始测试 --------------------
@@ -48,20 +50,21 @@ echo "虚拟机配置: 4C8G, 本地回环"
 echo "----------------------------------------------"
 
 for bench in "${BENCHMARKS[@]}"; do
-    # 解析参数
     read -r threads connections duration <<< "$bench"
 
     echo -e "${GREEN}[测试] 线程=${threads} 连接=${connections} 时长=${duration}s${NC}"
 
-    # 执行 wrk - 只输出到终端
-    # --latency : 输出延迟分布
-    # -d        : 持续时间
-    # -t        : 线程数
-    # -c        : HTTP 连接数
-    wrk --latency -d"${duration}" -t"${threads}" -c"${connections}" "$URL"
+    RESULT_FILE="${RESULT_DIR}/result_t${threads}_c${connections}.txt"
 
-    # 短暂间隔，避免系统过载影响下一轮准确性
+    wrk --latency -d"${duration}" -t"${threads}" -c"${connections}" "$URL" | tee "$RESULT_FILE"
+
+    {
+        echo "线程=${threads} 连接=${connections} 时长=${duration}s"
+        grep -E "Requests/sec|Transfer/sec|Latency" "$RESULT_FILE" 2>/dev/null || echo "  (详情见 result 文件)"
+        echo "---"
+    } >> "$SUMMARY_FILE"
+
     sleep 2
 done
 
-echo -e "${GREEN}压测完成！${NC}"
+echo -e "${GREEN}压测完成！结果保存在: ${RESULT_DIR}/${NC}"

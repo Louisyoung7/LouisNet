@@ -9,7 +9,7 @@ using namespace net::reactor;
 
 // 构造析构
 Channel::Channel(EventLoop* loop, int fd)
-    : loop_(loop), fd_(fd), events_(kNoneEvent), revents_(kNoneEvent), index_(kNew), isInLoop_(false) {}
+    : loop_(loop), fd_(fd), events_(kNoneEvent), revents_(kNoneEvent), index_(kNew), tied_(false), isInLoop_(false) {}
 Channel::~Channel() { assert(!isInLoop_); }
 
 // 处理事件
