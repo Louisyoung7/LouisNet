@@ -12,7 +12,6 @@ using namespace net::reactor;
 using namespace base;
 
 namespace {
-using TcpConnectionPtr = net::TcpConnection::TcpConnectionPtr;
 void removeConnection(EventLoop* loop, const TcpConnectionPtr& conn) {
     loop->queueInLoop([conn] { conn->connectionDestroyed(); });
 }

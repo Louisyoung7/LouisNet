@@ -23,7 +23,6 @@ class InetAddress;
 class TcpClient {
    private:
     using ConnectorPtr = std::shared_ptr<Connector>;
-    using TcpConnectionPtr = net::TcpConnection::TcpConnectionPtr;
 
     using ConnectionCallback = std::function<void(const TcpConnectionPtr&)>;
     using MessageCallback = std::function<void(const TcpConnectionPtr&, base::Buffer&)>;

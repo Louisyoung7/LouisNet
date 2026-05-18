@@ -2,6 +2,24 @@
 
 using namespace net::http;
 
+namespace {
+// 辅助函数：状态码 → 状态文本
+static constexpr const char* getStatusMessage(int code) {
+    switch (code) {
+        case 200:
+            return "OK";
+        case 400:
+            return "Bad Request";
+        case 404:
+            return "Not Found";
+        case 500:
+            return "Internal Server Error";
+        default:
+            return "Unknown";
+    }
+}
+}  // namespace
+
 // 设置响应版本
 HttpResponse& HttpResponse::setVersion(const std::string& version) {
     version_ = version;
@@ -37,6 +55,7 @@ HttpResponse& HttpResponse::setBody(std::string&& body) {
 // 转换为字符串
 std::string HttpResponse::toString() const {
     std::string response;
+    response.reserve(256);
 
     // 状态行
     response.append(version_)
@@ -55,20 +74,4 @@ std::string HttpResponse::toString() const {
     if (!body_.empty()) { response.append(body_); }
 
     return response;
-}
-
-// 辅助函数：状态码 → 状态文本
-std::string HttpResponse::getStatusMessage(int code) const {
-    switch (code) {
-        case 200:
-            return "OK";
-        case 400:
-            return "Bad Request";
-        case 404:
-            return "Not Found";
-        case 500:
-            return "Internal Server Error";
-        default:
-            return "Unknown";
-    }
 }

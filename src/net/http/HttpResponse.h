@@ -29,8 +29,5 @@ class HttpResponse {
     int statusCode_ = 200;
     std::map<std::string, std::string> headers_;
     std::string body_;
-
-    // 辅助函数：状态码 → 状态文本
-    std::string getStatusMessage(int code) const;
 };
 }  // namespace net::http

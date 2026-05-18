@@ -18,10 +18,6 @@ class EventLoop;
 class Acceptor;
 
 class TcpServer : public base::noncopyable {
-   public:
-    // 连接智能指针类型定义
-    using TcpConnectionPtr = net::TcpConnection::TcpConnectionPtr;
-
    private:
     // 回调函数类型定义
     using ConnectionCallback = std::function<void(const TcpConnectionPtr&)>;

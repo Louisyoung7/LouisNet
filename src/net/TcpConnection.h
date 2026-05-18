@@ -13,15 +13,16 @@
 #include "reactor/EventLoop.h"
 
 namespace net {
-
 namespace reactor {
 class Channel;
 }  // namespace reactor
 
-class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public base::noncopyable {
-   public:
-    using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+// 前向声明
+class TcpConnection;
 
+using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+
+class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public base::noncopyable {
    private:
     using ConnectionCallback = std::function<void(const TcpConnectionPtr&)>;
     using MessageCallback = std::function<void(const TcpConnectionPtr&, base::Buffer&)>;
