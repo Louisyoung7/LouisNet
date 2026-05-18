@@ -32,14 +32,14 @@ class HttpServer {
    private:
     struct HttpServerContext;  ///< 连接上下文结构体，包含HttpContext和HttpParser
 
-    std::unique_ptr<TcpServer> server_;  ///< 组合模式包含TcpServer实例
+    std::unique_ptr<TcpServer> server_;                         ///< 组合模式包含TcpServer实例
     std::unordered_map<std::string, RequestHandler> handlers_;  ///< 路径对应的请求处理回调函数映射
 
     // 处理连接状态变化
-    void onConnection(const net::TcpServer::TcpConnectionPtr& conn);
+    void onConnection(const TcpConnectionPtr& conn);
 
     // 处理消息接收
-    void onMessage(const net::TcpServer::TcpConnectionPtr& conn, base::Buffer& buffer);
+    void onMessage(const TcpConnectionPtr& conn, base::Buffer& buffer);
 
     // 处理请求
     void onRequest(HttpContext& ctx);

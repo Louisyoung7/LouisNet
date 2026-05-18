@@ -21,16 +21,15 @@ struct HttpServer::HttpServerContext {
 HttpServer::HttpServer(EventLoop* loop, const InetAddress& listenAddr)
     : server_(std::make_unique<TcpServer>(loop, listenAddr)) {
     // 设置连接状态回调
-    server_->setConnectionCallback([this](const TcpServer::TcpConnectionPtr& conn) { onConnection(conn); });
+    server_->setConnectionCallback([this](const TcpConnectionPtr& conn) { onConnection(conn); });
 
     // 设置消息接收回调
-    server_->setMessageCallback(
-        [this](const TcpServer::TcpConnectionPtr& conn, Buffer& buffer) { onMessage(conn, buffer); });
+    server_->setMessageCallback([this](const TcpConnectionPtr& conn, Buffer& buffer) { onMessage(conn, buffer); });
 }
 
 void HttpServer::start() { server_->start(); }
 
-void HttpServer::onConnection(const TcpServer::TcpConnectionPtr& conn) {
+void HttpServer::onConnection(const TcpConnectionPtr& conn) {
     if (conn->connected()) {
         // 连接建立时创建上下文
         conn->setContext(std::make_shared<HttpServerContext>(conn.get()));
@@ -39,8 +38,7 @@ void HttpServer::onConnection(const TcpServer::TcpConnectionPtr& conn) {
         conn->setContext(nullptr);
     }
 }
-
-void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buffer) {
+void HttpServer::onMessage(const TcpConnectionPtr& conn, Buffer& buffer) {
     // 获取上下文对象
     auto HttpCtx = std::any_cast<std::shared_ptr<HttpServerContext>>(conn->getContext());
     if (!HttpCtx) {

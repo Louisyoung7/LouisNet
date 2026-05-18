@@ -1,4 +1,4 @@
-#include "EchoServer.h"
+#include "echo.h"
 #include "log/Logger.h"
 #include "net/InetAddress.h"
 #include "net/reactor/EventLoop.h"
@@ -26,4 +26,8 @@ int main() {
 
     // 启动事件循环
     loop.loop();
+
+    spdlog::drop_all();
+    spdlog::shutdown();
+    return 0;
 }
