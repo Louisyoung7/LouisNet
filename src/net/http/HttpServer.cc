@@ -59,7 +59,7 @@ void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
             bool keepAlive = isKeepAlive(HttpCtx->ctx.request());
             HttpCtx->ctx.response().setHeader("Connection", keepAlive ? "keep-alive" : "close");
 
-            // 发送响应
+            // 转换为字符串
             std::string responseStr = HttpCtx->ctx.response().toString();
 
             // 重置上下文
@@ -75,7 +75,7 @@ void HttpServer::onMessage(const TcpServer::TcpConnectionPtr& conn, Buffer& buff
 
             logging::warn("[HttpServer] onMessage() connection {} error: {}.\n\n", conn->name(), strerror(errno));
 
-            // 重置上下文
+            // 转换为字符串
             std::string responseStr = HttpCtx->ctx.response().toString();
 
             // 重置上下文
