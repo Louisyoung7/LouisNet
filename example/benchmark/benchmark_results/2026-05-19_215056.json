@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-05-19_215056",
+  "optimization": "baseline",
+  "git_commit": "20ed47e5c86158a46e6908acb32d2e80fc55de89",
+  "git_branch": "benchmark",
+  "url": "http://127.0.0.1:8080/",
+  "tests": [
+    {
+      "threads": 1,
+      "connections": 100,
+      "duration": 10,
+      "rps": 192320,
+      "avg_latency_us": 0,
+      "p99_latency_us": 673.00,
+      "timeout_count": 0,
+      "transfer_mb_per_sec": "16.14MB"
+    }
+,
+    {
+      "threads": 2,
+      "connections": 500,
+      "duration": 60,
+      "rps": 179664,
+      "avg_latency_us": 0,
+      "p99_latency_us": 5.36,
+      "timeout_count": 0,
+      "transfer_mb_per_sec": "15.08MB"
+    }
+,
+    {
+      "threads": 2,
+      "connections": 1000,
+      "duration": 10,
+      "rps": 158928,
+      "avg_latency_us": 0,
+      "p99_latency_us": 12.53,
+      "timeout_count": 0,
+      "transfer_mb_per_sec": "13.34MB"
+    }
+,
+    {
+      "threads": 4,
+      "connections": 2000,
+      "duration": 15,
+      "rps": 113528,
+      "avg_latency_us": 0,
+      "p99_latency_us": 45.09,
+      "timeout_count": 790,
+      "transfer_mb_per_sec": "9.53MB"
+    }
+,
+    {
+      "threads": 8,
+      "connections": 4000,
+      "duration": 15,
+      "rps": 107967,
+      "avg_latency_us": 0,
+      "p99_latency_us": 47.29,
+      "timeout_count": 584,
+      "transfer_mb_per_sec": "9.06MB"
+    }
+
+  ]
+}
