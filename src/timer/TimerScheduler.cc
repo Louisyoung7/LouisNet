@@ -8,12 +8,14 @@
 using namespace timer;
 
 namespace {
+// 读取timerfd，清除读标志
 void readTimerfd(int timerfd) {
     uint64_t howmany;
     ssize_t n = ::read(timerfd, &howmany, sizeof(howmany));
     if (n != sizeof(howmany)) { logging::error("[TimerScheduler] readTimerfd() reads {} bytes instead of 8.\n\n", n); }
 }
 
+// 重置timerfd，设置到期时间
 void resetTimerfd(int timerfd, Timestamp expiration) {
     struct itimerspec spec {};
 
@@ -43,24 +45,28 @@ TimerScheduler::~TimerScheduler() {
 
 // 添加定时器，返回定时器ID
 TimerId TimerScheduler::addTimer(Timestamp expiration, Duration interval, TimerCallback cb) {
+    // 创建定时器对象，生成唯一ID，并添加到EventLoop线程中执行
     std::shared_ptr<Timer> timer = std::make_shared<Timer>(expiration, interval, std::move(cb), nextId_.load() + 1);
     nextId_.store(timer->id());
-    addTimerInLoop(timer->id(), std::move(timer));
-    return TimerId(timer->id());
+    addTimerInLoop(timer->id(), timer);
+
+    // 返回定时器ID
+    return TimerId(timer->id(), timer);
 }
+
 // 取消定时器
 void TimerScheduler::cancelTimer(TimerId timerId) {
     loop_->runInLoop([this, timerId]() { cancelTimerInLoop(timerId); });
 }
 
+// 在EventLoop线程中执行添加定时器操作
 void TimerScheduler::addTimerInLoop(uint64_t id, std::shared_ptr<Timer> timer) {
     assert(loop_->isInLoopThread());
     assert(timers_.size() == activeTimers_.size());
 
+    // 检查是否需要更新earliestChanged标志，如果新定时器的到期时间早于当前最早的定时器，则需要重置timerfd到期时间
     bool earliestChanged = false;
-
     auto expiration = timer->expiration();
-
     auto it = timers_.begin();
     if (it == timers_.end() || (expiration && (expiration < it->first))) { earliestChanged = true; }
 
@@ -77,14 +83,18 @@ void TimerScheduler::addTimerInLoop(uint64_t id, std::shared_ptr<Timer> timer) {
     assert(timers_.size() == activeTimers_.size());
 
     if (earliestChanged) {
+        // 重置timerfd到期时间
         auto expiration = timer->expiration();
         if (expiration) { resetTimerfd(timerfd_, expiration.value()); }
     }
 }
+
+// 在EventLoop线程中执行取消定时器操作
 void TimerScheduler::cancelTimerInLoop(TimerId timerId) {
     // 从activeTimers_中查找
     auto it = activeTimers_.find(timerId.id());
     if (it != activeTimers_.end()) {
+        assert(timerId.timer() == it->second);
         auto timer = it->second.lock();
         if (timer) {
             // 从timers_和activeTimers_中删除定时器
@@ -93,7 +103,7 @@ void TimerScheduler::cancelTimerInLoop(TimerId timerId) {
         }
     } else if (callingExpiredTimers_) {
         // 正在执行到期定时器回调，将定时器ID添加到cancelingTimers_中
-        cancelingTimers_.emplace(timerId.id(), std::weak_ptr<Timer>());
+        cancelingTimers_.emplace(timerId.id(), timerId.timer());
     }
 
     // 既不在activeTimers_中，也不在cancelingTimers_中，说明定时器已取消或已执行完毕，无需处理
