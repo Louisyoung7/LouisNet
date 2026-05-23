@@ -30,3 +30,8 @@ template <typename... Args>
 void critical(fmt::format_string<Args...> fmt, Args&&... args) {
     spdlog::critical(fmt, std::forward<Args>(args)...);
 }
+
+inline void shutdown() {
+    spdlog::drop_all();
+    spdlog::shutdown();
+}
