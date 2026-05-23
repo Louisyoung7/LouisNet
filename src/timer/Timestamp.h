@@ -29,6 +29,8 @@ class Timestamp {
         timePoint_ -= duration;
         return *this;
     }
+    Timestamp operator+(Duration duration) const { return Timestamp(timePoint_ + duration); }
+    Timestamp operator-(Duration duration) const { return Timestamp(timePoint_ - duration); }
 
     Duration operator-(const Timestamp& rhs) const { return timePoint_ - rhs.timePoint_; }
 
