@@ -94,8 +94,8 @@ void TimerScheduler::cancelTimerInLoop(TimerId timerId) {
     // 从activeTimers_中查找
     auto it = activeTimers_.find(timerId.id());
     if (it != activeTimers_.end()) {
-        assert(!timerId.timer().owner_before(it->second) && !it->second.owner_before(timerId.timer()));
         auto timer = it->second.lock();
+        assert(timerId.timer().lock() == timer);
         if (timer) {
             // 从timers_和activeTimers_中删除定时器
             timers_.erase(Entry(timer->expiration().value(), timer));

@@ -22,7 +22,7 @@ class Timer : public base::noncopyable {
     void run() const { cb_(); }
     void restart(Timestamp now) {
         if (repeat_) {
-            expiration_ = (now += interval_);
+            expiration_ = now + interval_;
         } else {
             expiration_ = std::nullopt;
         }
