@@ -21,7 +21,7 @@ class TimerId {
    private:
     friend class Timer;
 
-    uint64_t id_;
+    uint64_t id_{};
     std::weak_ptr<Timer> timer_;
 };
 }  // namespace timer
