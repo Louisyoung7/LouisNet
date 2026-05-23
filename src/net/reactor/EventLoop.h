@@ -8,6 +8,9 @@
 #include <vector>
 
 #include "base/noncopyable.h"
+#include "timer/Timer.h"
+#include "timer/TimerId.h"
+#include "timer/TimerScheduler.h"
 
 namespace net::reactor {
 class Channel;
@@ -50,6 +53,16 @@ class EventLoop : public base::noncopyable {
 
     // 判断是否在loop线程
     bool isInLoopThread();
+
+    // 定时器相关接口
+    // 在指定时间执行回调
+    timer::TimerId runAt(timer::Timestamp time, timer::TimerCallback cb);
+    // 在指定延迟后执行回调
+    timer::TimerId runAfter(timer::Duration delay, timer::TimerCallback cb);
+    // 每隔指定时间间隔执行回调
+    timer::TimerId runEvery(timer::Duration interval, timer::TimerCallback cb);
+    // 取消指定定时器
+    void cancel(timer::TimerId timerId);
 
     // 唤醒loop线程
     void wakeup();

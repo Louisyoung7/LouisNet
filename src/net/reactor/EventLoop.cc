@@ -14,9 +14,11 @@
 #include "log/Logger.h"
 
 using namespace net::reactor;
+using namespace timer;
 
+namespace {
 // 创建eventfd
-static int createEventfd() {
+int createEventfd() {
     int eventfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (eventfd < 0) {
         logging::critical("%s-%s-%d createEventfd() failed to create eventfd: {}\n\n", __FILE__, __func__, __LINE__,
@@ -24,6 +26,7 @@ static int createEventfd() {
     }
     return eventfd;
 }
+}  // namespace
 
 // 定义内部结构体
 struct EventLoop::Impl {
@@ -37,13 +40,15 @@ struct EventLoop::Impl {
     std::atomic_bool callingPendingFunctors{false};  // 是否正在处理任务列表
     int eventfd;                                     // 事件通知描述符
     std::unique_ptr<Channel> eventChannel;           // 事件通知Channel
+    std::unique_ptr<TimerScheduler> timerScheduler;  // 定时器调度器
 
     // 构造函数
     explicit Impl(EventLoop* loop)
         : poller(std::make_unique<Poller>(loop)),
           tid(std::this_thread::get_id()),
           eventfd(createEventfd()),
-          eventChannel(std::make_unique<Channel>(loop, eventfd)) {}
+          eventChannel(std::make_unique<Channel>(loop, eventfd)),
+          timerScheduler(std::make_unique<TimerScheduler>(loop)) {}
 };
 
 // 构造析构
@@ -115,6 +120,21 @@ void EventLoop::queueInLoop(Functor cb) {
 
 // 判断是否在loop线程
 bool EventLoop::isInLoopThread() { return impl_->tid == std::this_thread::get_id(); }
+
+// 在指定时间执行回调
+TimerId EventLoop::runAt(Timestamp time, TimerCallback cb) {
+    return impl_->timerScheduler->addTimer(time, Duration(0), std::move(cb));
+}
+// 在指定延迟后执行回调
+TimerId EventLoop::runAfter(Duration delay, TimerCallback cb) {
+    return impl_->timerScheduler->addTimer(Timestamp::now() + delay, Duration(0), std::move(cb));
+}
+// 每隔指定时间间隔执行回调
+TimerId EventLoop::runEvery(Duration interval, TimerCallback cb) {
+    return impl_->timerScheduler->addTimer(Timestamp::now(), interval, std::move(cb));
+}
+// 取消指定定时器
+void EventLoop::cancel(TimerId timerId) { impl_->timerScheduler->cancelTimer(timerId); }
 
 // 唤醒loop线程
 void EventLoop::wakeup() {
