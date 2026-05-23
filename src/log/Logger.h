@@ -5,6 +5,11 @@
 // 初始化日志系统
 void init();
 
+// 跟踪日志
+template <typename... Args>
+void trace(fmt::format_string<Args...> fmt, Args&&... args) {
+    spdlog::trace(fmt, std::forward<Args>(args)...);
+}
 // 调试日志
 template <typename... Args>
 void debug(fmt::format_string<Args...> fmt, Args&&... args) {
