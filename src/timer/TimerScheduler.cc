@@ -9,6 +9,9 @@ using namespace timer;
 using namespace net::reactor;
 
 namespace {
+// timerfd 只用来监听定时器到期事件，并不实际操控定时器
+// 定时器的增删查改由 Timerscheduler 内部维护，与 timerfd 解耦
+
 // 读取timerfd，清除读标志
 void readTimerfd(int timerfd) {
     uint64_t howmany;
@@ -24,9 +27,8 @@ void resetTimerfd(int timerfd, Timestamp expiration) {
     spec.it_value.tv_sec = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
     spec.it_value.tv_nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() % 1000000000;
 
-    spec.it_interval = spec.it_value;
-
-    ::timerfd_settime(timerfd, 0, &spec, nullptr);
+    int ret = ::timerfd_settime(timerfd, 0, &spec, nullptr);
+    if (ret != 0) { error("[TimerScheduler] timerfd_settime() failed.\n\n"); }
 }
 }  // namespace
 
@@ -49,11 +51,14 @@ TimerScheduler::~TimerScheduler() {
 TimerId TimerScheduler::addTimer(Timestamp expiration, Duration interval, TimerCallback cb) {
     // 创建定时器对象，生成唯一ID，并添加到EventLoop线程中执行
     std::shared_ptr<Timer> timer = std::make_shared<Timer>(expiration, interval, std::move(cb), nextId_.load() + 1);
-    nextId_.store(timer->id());
-    
-    TimerId timerId(timer->id(), timer);
+    uint64_t id = timer->id();
+    nextId_.store(id);
 
-    addTimerInLoop(timer->id(), std::move(timer));
+    TimerId timerId(id, timer);
+
+    loop_->runInLoop([this, id, timer] { addTimerInLoop(id, std::move(timer)); });
+
+    debug("[TimerScheduler] addTimer({}) added, id={}\n\n", timerId.id(), timerId.id());
 
     // 返回定时器ID
     return timerId;
@@ -87,6 +92,8 @@ void TimerScheduler::addTimerInLoop(uint64_t id, std::shared_ptr<Timer> timer) {
 
     assert(timers_.size() == activeTimers_.size());
 
+    trace("[TimerScheduler] addTimerInLoop({}) added, earliestChanged={}\n\n", id, earliestChanged);
+
     if (earliestChanged) {
         // 重置timerfd到期时间
         auto expiration = timer->expiration();
@@ -111,6 +118,8 @@ void TimerScheduler::cancelTimerInLoop(TimerId timerId) {
         cancelingTimers_.emplace(timerId.id(), timerId.timer());
     }
 
+    trace("[TimerScheduler] cancelTimerInLoop({}) canceled, id={}\n\n", timerId.id(), timerId.id());
+
     // 既不在activeTimers_中，也不在cancelingTimers_中，说明定时器已取消或已执行完毕，无需处理
 }
 
@@ -119,6 +128,7 @@ void TimerScheduler::handleRead() {
 
     // 读取timerfd，清除读标志
     readTimerfd(timerfd_);
+    debug("[TimerScheduler] handleRead() called.\n\n");
 
     // 提取所有到期的定时器
     Timestamp now = Timestamp::now();
