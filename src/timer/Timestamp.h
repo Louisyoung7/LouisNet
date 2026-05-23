@@ -6,10 +6,9 @@
 namespace timer {
 class Timestamp {
    public:
-    using Clock = std::chrono::system_clock;
+    using Clock = std::chrono::steady_clock;
     using TimePoint = Clock::time_point;
-    using Microseconds = std::chrono::microseconds;
-    using Nanoseconds = std::chrono::nanoseconds;
+    using Duration = Clock::duration;
 
     // 默认构造为 epoch (1970-01-01 00:00:00 UTC)
     Timestamp() : timePoint_(TimePoint()) {}
@@ -20,14 +19,21 @@ class Timestamp {
     static Timestamp now() { return Timestamp(Clock::now()); }
     static Timestamp epoch() { return Timestamp(); }
 
-    Timestamp& operator+=(Nanoseconds ns) {
-        timePoint_ += ns;
+    Timestamp operator+=(Duration duration) {
+        timePoint_ += duration;
         return *this;
     }
-    Timestamp& operator-=(Nanoseconds ns) {
-        timePoint_ -= ns;
+    Timestamp operator-=(Duration duration) {
+        timePoint_ -= duration;
         return *this;
     }
+
+    Duration operator-(const Timestamp& rhs) const { return timePoint_ - rhs.timePoint_; }
+    
+
+    bool operator>(const Timestamp& rhs) const { return timePoint_ > rhs.timePoint_; }
+    bool operator<(const Timestamp& rhs) const { return timePoint_ < rhs.timePoint_; }
+    bool operator==(const Timestamp& rhs) const { return timePoint_ == rhs.timePoint_; }
 
    private:
     TimePoint timePoint_;
