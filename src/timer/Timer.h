@@ -29,7 +29,7 @@ class Timer : public base::noncopyable {
     }
 
     bool operator<(const Timer& rhs) const { return expiration_ < rhs.expiration_; }
-    bool operator=(const Timer& rhs) const { return expiration_ == rhs.expiration_; }
+    bool operator==(const Timer& rhs) const { return expiration_ == rhs.expiration_; }
     bool operator>(const Timer& rhs) const { return expiration_ > rhs.expiration_; }
 
     std::optional<Timestamp> expiration() const { return expiration_; }
@@ -41,7 +41,7 @@ class Timer : public base::noncopyable {
     std::optional<Timestamp> expiration_;
     TimerCallback cb_;
     bool repeat_;
-    Duration interval_;
-    uint64_t id_;
+    Duration interval_{};
+    uint64_t id_{};
 };
 }  // namespace timer
