@@ -8,13 +8,13 @@
 #include "timer/Timestamp.h"
 
 namespace timer {
+using TimerCallback = std::function<void()>;
+
+using Clock = std::chrono::steady_clock;
+using Duration = Clock::duration;
+
 class Timer : public base::noncopyable {
    public:
-    using Clock = std::chrono::steady_clock;
-    using Duration = Clock::duration;
-
-    using TimerCallback = std::function<void()>;
-
     Timer() = default;
     Timer(Timestamp expiration, Duration interval, TimerCallback cb, uint64_t id)
         : expiration_(expiration), cb_(cb), repeat_(interval > Duration(0)), interval_(interval), id_(id) {}

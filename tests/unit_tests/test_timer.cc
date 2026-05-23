@@ -16,7 +16,7 @@ TEST_F(TimerTest, DefaultConstruction) {
     Timer timer;
     EXPECT_FALSE(timer.expiration().has_value());
     EXPECT_FALSE(timer.repeat());
-    EXPECT_EQ(timer.interval(), Timer::Duration(0));
+    EXPECT_EQ(timer.interval(), timer::Duration(0));
     EXPECT_EQ(timer.id(), 0u);
 }
 
@@ -37,7 +37,7 @@ TEST_F(TimerTest, ConstructionWithParameters) {
 
 TEST_F(TimerTest, NonRepeatingTimer) {
     Timestamp expiration = Timestamp::now();
-    auto interval = Timer::Duration(0);
+    auto interval = timer::Duration(0);
     auto cb = []() {};
 
     Timer timer(expiration, interval, cb, 1);
@@ -72,7 +72,7 @@ TEST_F(TimerTest, RestartRepeatingTimer) {
 }
 
 TEST_F(TimerTest, RestartNonRepeatingTimer) {
-    auto interval = Timer::Duration(0);
+    auto interval = timer::Duration(0);
     auto cb = []() {};
 
     Timer timer(Timestamp::epoch(), interval, cb, 1);
