@@ -16,7 +16,9 @@ class Timestamp {
     // 从time_point构造
     explicit Timestamp(TimePoint timePoint) : timePoint_(std::move(timePoint)) {}
 
+    // 获取当前时间戳
     static Timestamp now() { return Timestamp(Clock::now()); }
+    // 获取epoch时间戳
     static Timestamp epoch() { return Timestamp(); }
 
     Timestamp operator+=(Duration duration) {
@@ -29,7 +31,6 @@ class Timestamp {
     }
 
     Duration operator-(const Timestamp& rhs) const { return timePoint_ - rhs.timePoint_; }
-    
 
     bool operator>(const Timestamp& rhs) const { return timePoint_ > rhs.timePoint_; }
     bool operator<(const Timestamp& rhs) const { return timePoint_ < rhs.timePoint_; }
