@@ -108,7 +108,7 @@ TimerId EventLoop::runAfter(Duration delay, TimerCallback cb) {
 }
 // 每隔指定时间间隔执行回调
 TimerId EventLoop::runEvery(Duration interval, TimerCallback cb) {
-    return timerScheduler_->addTimer(Timestamp::now(), interval, std::move(cb));
+    return timerScheduler_->addTimer(Timestamp::now() + interval, interval, std::move(cb));
 }
 // 取消指定定时器
 void EventLoop::cancel(TimerId timerId) { timerScheduler_->cancelTimer(timerId); }
