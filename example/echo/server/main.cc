@@ -27,7 +27,6 @@ int main() {
     // 启动事件循环
     loop.loop();
 
-    spdlog::drop_all();
-    spdlog::shutdown();
+    shutdown();
     return 0;
 }

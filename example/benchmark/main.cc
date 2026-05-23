@@ -44,7 +44,6 @@ int main() {
     loop.loop();
 
     // 关闭spdlog，保证日志文件被写入
-    spdlog::drop_all();
-    spdlog::shutdown();
+    shutdown();
     return 0;
 }

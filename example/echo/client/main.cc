@@ -13,7 +13,6 @@ int main() {
     client.start();
     info("start client");
     loop.loop();
-    spdlog::drop_all();
-    spdlog::shutdown();
+    shutdown();
     return 0;
 }
