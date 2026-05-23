@@ -35,3 +35,5 @@ inline void shutdown() {
     spdlog::drop_all();
     spdlog::shutdown();
 }
+
+inline void setLogLevel(spdlog::level::level_enum level) { spdlog::set_level(level); }

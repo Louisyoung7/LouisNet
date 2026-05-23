@@ -9,8 +9,6 @@ using namespace spdlog;
 
 static std::shared_ptr<logger> logger_;
 
-inline void log(level::level_enum level, std::string_view msg) { logger_->log(level, msg); }
-
 void init() {
     init_thread_pool(8192, 2);
 
@@ -20,5 +18,4 @@ void init() {
     logger_ = std::make_shared<async_logger>("server", console_sink, thread_pool(),
                                              spdlog::async_overflow_policy::discard_new);
     set_default_logger(logger_);
-    logger_->set_level(level::info);
 }
