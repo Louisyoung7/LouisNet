@@ -50,10 +50,13 @@ TimerId TimerScheduler::addTimer(Timestamp expiration, Duration interval, TimerC
     // 创建定时器对象，生成唯一ID，并添加到EventLoop线程中执行
     std::shared_ptr<Timer> timer = std::make_shared<Timer>(expiration, interval, std::move(cb), nextId_.load() + 1);
     nextId_.store(timer->id());
-    addTimerInLoop(timer->id(), timer);
+    
+    TimerId timerId(timer->id(), timer);
+
+    addTimerInLoop(timer->id(), std::move(timer));
 
     // 返回定时器ID
-    return TimerId(timer->id(), timer);
+    return timerId;
 }
 
 // 取消定时器
