@@ -20,9 +20,9 @@ int main() {
     server.start();
 
     // 初始化日志系统
-    logging::init();
+    init();
 
-    logging::info("EchoServer started on port 8080");
+    info("EchoServer started on port 8080");
 
     // 启动事件循环
     loop.loop();

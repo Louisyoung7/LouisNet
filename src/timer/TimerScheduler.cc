@@ -6,13 +6,14 @@
 #include "net/reactor/EventLoop.h"
 
 using namespace timer;
+using namespace net::reactor;
 
 namespace {
 // 读取timerfd，清除读标志
 void readTimerfd(int timerfd) {
     uint64_t howmany;
     ssize_t n = ::read(timerfd, &howmany, sizeof(howmany));
-    if (n != sizeof(howmany)) { logging::error("[TimerScheduler] readTimerfd() reads {} bytes instead of 8.\n\n", n); }
+    if (n != sizeof(howmany)) { error("[TimerScheduler] readTimerfd() reads {} bytes instead of 8.\n\n", n); }
 }
 
 // 重置timerfd，设置到期时间
@@ -29,12 +30,13 @@ void resetTimerfd(int timerfd, Timestamp expiration) {
 }
 }  // namespace
 
-TimerScheduler::TimerScheduler(net::reactor::EventLoop* loop)
+TimerScheduler::TimerScheduler(EventLoop* loop)
     : loop_(loop),
       timerfd_(::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC)),
       timerChannel_(loop, timerfd_) {
     timerChannel_.setReadCallback([this]() { handleRead(); });
     timerChannel_.enableRead();
+    debug("[TimerScheduler] TimerScheduler({}) created, enableRead deferred.\n\n", timerfd_);
 }
 
 TimerScheduler::~TimerScheduler() {

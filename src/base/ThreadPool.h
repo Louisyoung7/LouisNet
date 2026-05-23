@@ -85,7 +85,7 @@ class ThreadPool : public noncopyable {
         // 通知一个线程
         cv_.notify_one();
 
-        logging::debug("[ThreadPool] submit() added task to threadPool.\n\n");
+        debug("[ThreadPool] submit() added task to threadPool.\n\n");
 
         return result;
     }

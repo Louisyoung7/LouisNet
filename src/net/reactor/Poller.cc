@@ -11,12 +11,11 @@
 #include "log/Logger.h"
 
 using namespace net::reactor;
-using namespace logging;
 
 // 构造析构
 Poller::Poller(EventLoop* loop) : ownerLoop_(loop), epollFd_(::epoll_create1(EPOLL_CLOEXEC)), events_(16) {
     if (epollFd_ == -1) {
-        logging::critical("[Poller] Poller() failed to create epollfd: {}.\n\n", strerror(errno));
+        critical("[Poller] Poller() failed to create epollfd: {}.\n\n", strerror(errno));
         // 无法创建epollfd，程序无法运行
         abort();
     }
@@ -38,10 +37,10 @@ void Poller::poll(int timeoutMs, ChannelList& activeChannels) {
         //* 如果活跃事件数量接近events_的大小，动态扩展events_向量
         if (static_cast<size_t>(nfds) == events_.size()) { events_.resize(events_.size() * 2); }
     } else if (nfds == 0) {
-        logging::debug("[Poller] poll() timed out.\n\n");
+        debug("[Poller] poll() timed out.\n\n");
     } else {
         errno = savedErrno;
-        logging::error("[Poller] poll() failed: {}.\n\n", strerror(errno));
+        error("[Poller] poll() failed: {}.\n\n", strerror(errno));
     }
 }
 
@@ -115,8 +114,7 @@ void Poller::addFd(int fd, int events) {
     event.events = events;
     event.data.fd = fd;
     if (::epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &event) < 0) {
-        logging::error("[Poller] addFd() failed to add fd {} to epollfd {} with errno: {}.\n\n", fd, epollFd_,
-                       strerror(errno));
+        error("[Poller] addFd() failed to add fd {} to epollfd {} with errno: {}.\n\n", fd, epollFd_, strerror(errno));
     }
 }
 
@@ -125,15 +123,14 @@ void Poller::modFd(int fd, int events) {
     event.events = events;
     event.data.fd = fd;
     if (::epoll_ctl(epollFd_, EPOLL_CTL_MOD, fd, &event) < 0) {
-        logging::error("[Poller] modFd() failed to mod fd {} to epollfd {} with errno: {}.\n\n", fd, epollFd_,
-                       strerror(errno));
+        error("[Poller] modFd() failed to mod fd {} to epollfd {} with errno: {}.\n\n", fd, epollFd_, strerror(errno));
     }
 }
 
 void Poller::delFd(int fd) {
     if (::epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, nullptr) < 0) {
-        logging::error("[Poller] delFd() failed to del fd {} from epollfd {} with errno: {}.\n\n", fd, epollFd_,
-                       strerror(errno));
+        error("[Poller] delFd() failed to del fd {} from epollfd {} with errno: {}.\n\n", fd, epollFd_,
+              strerror(errno));
     }
 }
 

@@ -32,10 +32,10 @@ Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenAddr, bool reusePor
     // 设置Channel的读回调，处理新连接
     acceptChannel_->setReadCallback([this]() { handleRead(); });
 
-    logging::debug("[Acceptor] Acceptor() created with listenFd_ = {}\n\n", acceptSocket_->fd());
+    debug("[Acceptor] Acceptor() created with listenFd_ = {}\n\n", acceptSocket_->fd());
 }
 Acceptor::~Acceptor() {
-    logging::debug("[Acceptor] ~Acceptor() closing listenFd_ = {}\n\n", acceptSocket_->fd());
+    debug("[Acceptor] ~Acceptor() closing listenFd_ = {}\n\n", acceptSocket_->fd());
     // 关闭监听Channel
     acceptChannel_->disableAll();
     acceptChannel_->remove();
@@ -64,9 +64,9 @@ void Acceptor::handleRead() {
         }
     } else {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            logging::debug("[Acceptor] handleRead() no more connections\n\n");
+            debug("[Acceptor] handleRead() no more connections\n\n");
         } else {
-            logging::error("[Acceptor] handleRead() accept() failed with errno = {}\n\n", strerror(errno));
+            error("[Acceptor] handleRead() accept() failed with errno = {}\n\n", strerror(errno));
         }
     }
 }

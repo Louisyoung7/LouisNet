@@ -2,9 +2,9 @@
 
 #include "spdlog/spdlog.h"
 
-namespace logging {
 // 初始化日志系统
 void init();
+
 // 调试日志
 template <typename... Args>
 void debug(fmt::format_string<Args...> fmt, Args&&... args) {
@@ -30,4 +30,3 @@ template <typename... Args>
 void critical(fmt::format_string<Args...> fmt, Args&&... args) {
     spdlog::critical(fmt, std::forward<Args>(args)...);
 }
-}  // namespace logging

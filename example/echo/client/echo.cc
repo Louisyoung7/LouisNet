@@ -21,5 +21,5 @@ void EchoClient::onConnection(const TcpConnectionPtr& conn) {
 }
 void EchoClient::onMessage([[maybe_unused]] const TcpConnectionPtr& conn, Buffer& buffer) {
     std::string msg = buffer.retrieveAllAsString();
-    logging::info("onMessage: {}", msg);
+    info("onMessage: {}", msg);
 }

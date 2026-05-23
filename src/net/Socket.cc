@@ -13,14 +13,14 @@ Socket::~Socket() { ::close(sockfd_); }
 // 绑定IP and Port
 void Socket::bindAddress(const InetAddress& localAddr) {
     if (::bind(sockfd_, localAddr.getSockaddr(), sizeof(struct sockaddr_in)) < 0) {
-        logging::critical("[Socket] bindAddress() failed, sockfd {}: {}.\n\n", sockfd_, strerror(errno));
+        critical("[Socket] bindAddress() failed, sockfd {}: {}.\n\n", sockfd_, strerror(errno));
     }
 }
 
 // 设置监听
 void Socket::listen() {
     if (::listen(sockfd_, SOMAXCONN) < 0) {
-        logging::critical("[Socket] listen() failed, sockfd {}: {}.\n\n", sockfd_, strerror(errno));
+        critical("[Socket] listen() failed, sockfd {}: {}.\n\n", sockfd_, strerror(errno));
     }
 }
 
@@ -29,14 +29,14 @@ int Socket::accept(InetAddress& peerAddr) {
     socklen_t addrLen = sizeof(struct sockaddr_in);
     int connfd = ::accept4(sockfd_, const_cast<struct sockaddr*>(peerAddr.getSockaddr()), &addrLen,
                            SOCK_NONBLOCK | SOCK_CLOEXEC);
-    if (connfd < 0) { logging::error("[Socket] accept() failed, sockfd {}: {}.\n\n", sockfd_, strerror(errno)); }
+    if (connfd < 0) { error("[Socket] accept() failed, sockfd {}: {}.\n\n", sockfd_, strerror(errno)); }
     return connfd;
 }
 
 // 关闭写端
 void Socket::shutdownWrite() {
     if (::shutdown(sockfd_, SHUT_WR) < 0) {
-        logging::error("[Socket] shutdownWrite() failed, sockfd {}: {}.\n\n", sockfd_, strerror(errno));
+        error("[Socket] shutdownWrite() failed, sockfd {}: {}.\n\n", sockfd_, strerror(errno));
     }
 }
 

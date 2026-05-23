@@ -18,8 +18,8 @@ namespace {
 int createEventfd() {
     int eventfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (eventfd < 0) {
-        logging::critical("%s-%s-%d createEventfd() failed to create eventfd: {}\n\n", __FILE__, __func__, __LINE__,
-                          strerror(errno));
+        critical("%s-%s-%d createEventfd() failed to create eventfd: {}\n\n", __FILE__, __func__, __LINE__,
+                 strerror(errno));
     }
     return eventfd;
 }
@@ -50,7 +50,7 @@ void EventLoop::loop() {
     looping_ = true;
     quit_ = false;
 
-    logging::debug("[EventLoop] loop() started.\n\n");
+    debug("[EventLoop] loop() started.\n\n");
 
     while (!quit_) {
         // 填充活跃的Channel列表
@@ -63,8 +63,7 @@ void EventLoop::loop() {
         // 执行待处理任务
         doPendingFunctors();
     }
-
-    logging::debug("[EventLoop] loop() exited.\n\n");
+    debug("[EventLoop] loop() exited.\n\n");
     looping_ = false;
 }
 
@@ -119,13 +118,13 @@ void EventLoop::wakeup() {
     // 向注册到EventLoop的eventfd写入数据，唤醒对应EventLoop
     uint64_t one{1};
     ssize_t n = ::write(eventfd_, &one, sizeof(one));
-    if (n != sizeof(one)) { logging::error("[EventLoop] wakeup() writes {} bytes instead of 8.\n\n", n); }
+    if (n != sizeof(one)) { error("[EventLoop] wakeup() writes {} bytes instead of 8.\n\n", n); }
 }
 
 void EventLoop::handleRead() {
     uint64_t one = 1;
     ssize_t n = ::read(eventfd_, &one, sizeof(one));
-    if (n != sizeof(one)) { logging::error("[EventLoop] handleRead() reads {} bytes instead of 8.\n\n", n); }
+    if (n != sizeof(one)) { error("[EventLoop] handleRead() reads {} bytes instead of 8.\n\n", n); }
 }
 
 // 调用Poller的poll
