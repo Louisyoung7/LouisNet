@@ -44,17 +44,13 @@ EventLoop::~EventLoop() {
 
 // 运行事件循环
 void EventLoop::loop() {
-    assert(!looping_);
-    assert(!quit_);
-
     looping_ = true;
-    quit_ = false;
 
     debug("[EventLoop] loop() started.\n\n");
 
     while (!quit_) {
         // 填充活跃的Channel列表
-        poll(4000, activeChannels_);
+        poll(2000, activeChannels_);
         // 遍历活跃的Channel列表，处理事件
         for (auto& channel : activeChannels_) { channel->handleEvents(); }
         // 清空活跃的Channel列表
@@ -68,7 +64,10 @@ void EventLoop::loop() {
 }
 
 // 退出事件循环
-void EventLoop::quit() { quit_ = true; }
+void EventLoop::quit() {
+    debug("[EventLoop] quit() called, quit_ was {}\n\n", quit_.load());
+    quit_ = true;
+}
 
 // 更新Channel
 void EventLoop::updateChannel(Channel* channel) { poller_->updateChannel(channel); }
