@@ -24,6 +24,9 @@ void resetTimerfd(int timerfd, Timestamp expiration) {
     struct itimerspec spec {};
 
     auto duration = expiration - Timestamp::now();
+    // 如果到期时间小于等于当前时间，设置为100毫秒后到期
+    if (duration <= Duration(0)) { duration = Duration(100000000); }
+
     spec.it_value.tv_sec = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
     spec.it_value.tv_nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() % 1000000000;
 
@@ -74,11 +77,11 @@ void TimerScheduler::addTimerInLoop(uint64_t id, std::shared_ptr<Timer> timer) {
     assert(loop_->isInLoopThread());
     assert(timers_.size() == activeTimers_.size());
 
-    // 检查是否需要更新earliestChanged标志，如果新定时器的到期时间早于当前最早的定时器，则需要重置timerfd到期时间
+    // 检查是否需要更新earliestChanged标志，如果新定时器的到期时间早于或等于当前最早的定时器，则需要重置timerfd到期时间
     bool earliestChanged = false;
     auto expiration = timer->expiration();
     auto it = timers_.begin();
-    if (it == timers_.end() || (expiration && (expiration < it->first))) { earliestChanged = true; }
+    if (it == timers_.end() || (expiration && (expiration.value() <= it->first))) { earliestChanged = true; }
 
     {
         [[maybe_unused]] auto [it, inserted] = timers_.emplace(expiration.value(), timer);
@@ -128,7 +131,7 @@ void TimerScheduler::handleRead() {
 
     // 读取timerfd，清除读标志
     readTimerfd(timerfd_);
-    debug("[TimerScheduler] handleRead() called.\n\n");
+    trace("[TimerScheduler] handleRead() called.\n\n");
 
     // 提取所有到期的定时器
     Timestamp now = Timestamp::now();
@@ -184,5 +187,11 @@ void TimerScheduler::reset(const std::vector<TimerScheduler::Entry>& expiredTime
             timer->restart(now);
             addTimerInLoop(timer->id(), timer);
         }
+    }
+
+    // 如果timers_中还有定时器，重置timerfd到下一个定时器的到期时间
+    if (!timers_.empty()) {
+        auto nextExpiration = timers_.begin()->first;
+        resetTimerfd(timerfd_, nextExpiration);
     }
 }
