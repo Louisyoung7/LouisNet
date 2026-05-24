@@ -37,6 +37,9 @@ class Timestamp {
     bool operator>(const Timestamp& rhs) const { return timePoint_ > rhs.timePoint_; }
     bool operator<(const Timestamp& rhs) const { return timePoint_ < rhs.timePoint_; }
     bool operator==(const Timestamp& rhs) const { return timePoint_ == rhs.timePoint_; }
+    bool operator!=(const Timestamp& rhs) const { return timePoint_ != rhs.timePoint_; }
+    bool operator>=(const Timestamp& rhs) const { return timePoint_ >= rhs.timePoint_; }
+    bool operator<=(const Timestamp& rhs) const { return timePoint_ <= rhs.timePoint_; }
 
    private:
     TimePoint timePoint_;
