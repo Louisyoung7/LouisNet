@@ -39,13 +39,13 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd, const InetAddress& loc
     channel_->setCloseCallback([this]() { handleClose(); });
     channel_->setErrorCallback([this]() { handleError(); });
 
-    logging::debug("[TcpConnection] TcpConnection() created connection {}.\n\n", name_.c_str());
+    debug("[TcpConnection] TcpConnection() created connection {}.\n\n", name_.c_str());
 }
 TcpConnection::~TcpConnection() {
     // 析构函数调用时，确保连接已经断开
     assert(state_ == StateE::kDisconnected);
 
-    logging::debug("[TcpConnection] ~TcpConnecion() destroying connection {}.\n\n", name_.c_str());
+    debug("[TcpConnection] ~TcpConnecion() destroying connection {}.\n\n", name_.c_str());
 }
 
 // 连接建立，更新连接状态为kConnected，使能Channel的读事件，调用连接建立回调
@@ -69,9 +69,7 @@ void TcpConnection::connectionDestroyed() {
         channel_->disableAll();
         // 从所属的EventLoop中移除
         channel_->remove();
-    } catch (const std::exception& e) {
-        logging::error("[TcpConnection] connectionDestroyed() error: {}.\n\n", e.what());
-    }
+    } catch (const std::exception& e) { error("[TcpConnection] connectionDestroyed() error: {}.\n\n", e.what()); }
 
     // TcpConnection对象的真正销毁由智能指针管理，当引用计数归零，自动调用析构函数
 }
@@ -100,7 +98,7 @@ void TcpConnection::handleRead() {
         // ECONNRESET: 连接被重置，可能是对端关闭了连接
         // EPIPE: 连接被关闭，写入数据会返回EPIPE错误
         if (errno == ECONNRESET || errno == EPIPE) {
-            logging::info("[TcpConnection] handleRead() connection {} closed by peer.\n\n", name_);
+            info("[TcpConnection] handleRead() connection {} closed by peer.\n\n", name_);
             handleClose();
         } else {
             handleError();
@@ -163,13 +161,13 @@ void TcpConnection::handleError() {
     // 获取sockfd的出错时的errno
     // 这里出现的错误相对于handleError()是异步的，不能直接用errno
     // 而是通过getsockopt获取SO_ERROR选项来获取最新的错误状态
-    int error = socket_->getError();
+    int errorNo = socket_->getError();
 
     // 保存错误状态
-    error_ = error;
+    error_ = errorNo;
 
-    if (error != 0 && error != ECONNRESET && error != EPIPE) {
-        logging::error("[TcpConnection] handleError() connection {} error: {}.\n\n", name_, strerror(error));
+    if (errorNo != 0 && errorNo != ECONNRESET && errorNo != EPIPE) {
+        error("[TcpConnection] handleError() connection {} error: {}.\n\n", name_, strerror(errorNo));
     }
 
     // 大多数网络错误发生后连接都不可复用，必须关闭连接
@@ -199,7 +197,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
 
     // 连接已关闭，放弃写入
     if (state_ == StateE::kDisconnected) {
-        logging::warn("[TcpConnection] sendInLoop() connection {} is disconnected, give up writing.\n\n", name_);
+        warn("[TcpConnection] sendInLoop() connection {} is disconnected, give up writing.\n\n", name_);
         return;
     }
 
@@ -218,7 +216,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
             // 写入错误，重置nwrote
             nwrote = 0;
             if (errno != EAGAIN || EWOULDBLOCK) {
-                logging::error("[TcpConnection] sendInLoop() connection {} error: {}.\n\n", name_, strerror(errno));
+                error("[TcpConnection] sendInLoop() connection {} error: {}.\n\n", name_, strerror(errno));
                 if (errno == EPIPE || errno == ECONNRESET) {
                     // 更新savedError
                     savedError = errno;

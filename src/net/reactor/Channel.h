@@ -33,7 +33,7 @@ class Channel : public base::noncopyable {
     static constexpr int kAdded = 0;    ///< 添加到Poller，也注册到epoll
     static constexpr int kDeleted = 1;  ///< 添加到Poller，但未注册到epoll
 
-    // 构造析构
+    Channel() = default;
     Channel(EventLoop* loop, int fd);
     ~Channel();
 
@@ -101,13 +101,13 @@ class Channel : public base::noncopyable {
     void handler();
 
     EventLoop* loop_;          // 所属的EventLoop
-    const int fd_;             // 接管的套接字
+    int fd_;                   // 接管的套接字
     int events_;               // 套接字关心的事件（上层应用指定）
     int revents_;              // 套接字实际发生的事件（epoll_wait返回）
     int index_;                // Channel在Poller中的状态
     std::weak_ptr<void> tie_;  // 回调执行对象的弱指针，用于绑定回调执行对象
     bool tied_;                // 是否绑定回调执行对象
-    bool isInLoop_;             // 是否在EventLoop中
+    bool isInLoop_;            // 是否在EventLoop中
 
     // 回调函数
     EventCallback readCallback_;

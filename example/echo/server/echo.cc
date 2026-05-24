@@ -22,9 +22,9 @@ void EchoServer::start() { server_.start(); }
 // 被设置为TcpServer的连接状态回调，在连接状态变化时输出日志
 void EchoServer::onConnection(const TcpConnectionPtr& conn) {
     if (conn->connected()) {
-        logging::debug("[EchoServer] onConnection() connection {} established.\n\n", conn->name());
+        debug("[EchoServer] onConnection() connection {} established.\n\n", conn->name());
     } else {
-        logging::debug("[EchoServer] onConnection() connection {} disconnected.\n\n", conn->name());
+        debug("[EchoServer] onConnection() connection {} disconnected.\n\n", conn->name());
     }
 }
 
@@ -34,8 +34,8 @@ void EchoServer::onMessage(const TcpConnectionPtr& conn, Buffer& buffer) {
     // 读取buffer中的所有可读数据到string
     std::string message = buffer.retrieveAllAsString();
 
-    logging::info("[EchoServer] onMessage() connection {} received {} bytes: {}.\n\n", conn->name(), message.size(),
-                  message.c_str());
+    info("[EchoServer] onMessage() connection {} received {} bytes: {}.\n\n", conn->name(), message.size(),
+         message.c_str());
 
     // 回显数据
     conn->send(message);

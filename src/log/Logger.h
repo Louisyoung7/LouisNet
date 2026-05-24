@@ -2,9 +2,14 @@
 
 #include "spdlog/spdlog.h"
 
-namespace logging {
 // 初始化日志系统
 void init();
+
+// 跟踪日志
+template <typename... Args>
+void trace(fmt::format_string<Args...> fmt, Args&&... args) {
+    spdlog::trace(fmt, std::forward<Args>(args)...);
+}
 // 调试日志
 template <typename... Args>
 void debug(fmt::format_string<Args...> fmt, Args&&... args) {
@@ -30,4 +35,10 @@ template <typename... Args>
 void critical(fmt::format_string<Args...> fmt, Args&&... args) {
     spdlog::critical(fmt, std::forward<Args>(args)...);
 }
-}  // namespace logging
+
+inline void shutdown() {
+    spdlog::drop_all();
+    spdlog::shutdown();
+}
+
+inline void setLogLevel(spdlog::level::level_enum level) { spdlog::set_level(level); }

@@ -42,16 +42,15 @@ int main() {
     server.start();
 
     // 初始化日志系统
-    logging::init();
+    init();
 
     // 打印服务器启动信息
-    logging::info("HttpServer started on port 8080");
+    info("HttpServer started on port 8080");
 
     // 启动事件循环
     loop.loop();
 
     // 关闭spdlog，保证日志文件被写入
-    spdlog::drop_all();
-    spdlog::shutdown();
+    shutdown();
     return 0;
 }

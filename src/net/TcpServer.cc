@@ -38,7 +38,7 @@ TcpServer::~TcpServer() {
 // 启动服务器
 // 让Acceptor实例开始监听新连接
 void TcpServer::start() {
-    logging::debug("[TcpServer] start() starting to listen on {}.\n\n", listenAddr_.toIpPort());
+    debug("[TcpServer] start() starting to listen on {}.\n\n", listenAddr_.toIpPort());
     loop_->runInLoop([this]() { acceptor_->listen(); });
 }
 
@@ -66,7 +66,7 @@ void TcpServer::onNewConnection(int sockfd, const InetAddress& peerAddr) {
         // 存储实例
         connections_[sockfd] = conn;
     } catch (const std::exception& e) {
-        logging::error("[TcpServer] onNewConnection() error: {}.\n\n", e.what());
+        error("[TcpServer] onNewConnection() error: {}.\n\n", e.what());
         // 发生错误时关闭socket
         ::close(sockfd);
     }
@@ -77,7 +77,7 @@ void TcpServer::onConnection(const TcpConnectionPtr& conn) {
     try {
         // 调用上层设置的回调
         if (connectionCallback_) { connectionCallback_(conn); }
-    } catch (const std::exception& e) { logging::error("[TcpServer] onConnection() error: {}.\n\n", e.what()); }
+    } catch (const std::exception& e) { error("[TcpServer] onConnection() error: {}.\n\n", e.what()); }
 }
 
 // 移除连接
