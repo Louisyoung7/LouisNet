@@ -1,4 +1,4 @@
-# 查找Google Test
+# 查找Google Test (Conan2)
 find_package(GTest REQUIRED)
 
 file(GLOB_RECURSE TEST_SOURCES ${PROJECT_SOURCE_DIR}/tests/*.cc)
@@ -7,7 +7,7 @@ file(GLOB_RECURSE TEST_SOURCES ${PROJECT_SOURCE_DIR}/tests/*.cc)
 add_executable(tests ${TEST_SOURCES})
 
 # 链接Google Test和必要的库
-target_link_libraries(tests ${GTEST_BOTH_LIBRARIES} pthread LouisNetLib)
+target_link_libraries(tests GTest::gtest_main LouisNetLib)
 
 # 包含头文件目录
 target_include_directories(tests PRIVATE "${PROJECT_SOURCE_DIR}/src")
