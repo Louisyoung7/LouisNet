@@ -86,7 +86,7 @@ class EventLoop : public base::noncopyable {
     // 执行待处理任务
     void doPendingFunctors();
 
-    //
+    // 处理事件通知Channel的读事件
     void handleRead();
 };
 }  // namespace net::reactor

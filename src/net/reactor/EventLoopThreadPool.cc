@@ -9,9 +9,12 @@ using namespace net::reactor;
 EventLoopThreadPool::EventLoopThreadPool(EventLoop* mainLoop) : mainLoop_(mainLoop), threadNum_(0), next_(0) {}
 
 EventLoopThreadPool::~EventLoopThreadPool() {
-    for (auto& loop : subLoops_) { loop->quit(); }
+    for (auto& loop : subLoops_) loop->quit();
+
     for (auto& thread : threads_) {
-        if (thread.joinable()) { thread.join(); }
+        if (thread.joinable()) {
+            thread.join();
+        }
     }
 }
 
@@ -31,7 +34,9 @@ void EventLoopThreadPool::start() {
 }
 
 EventLoop* EventLoopThreadPool::getNextLoop() {
-    if (threadNum_ == 0) { return mainLoop_; }
+    if (threadNum_ == 0) {
+        return mainLoop_;
+    }
     next_ = (++next_) % threadNum_;
     return subLoops_[next_];
 }
