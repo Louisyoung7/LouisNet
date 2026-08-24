@@ -18,8 +18,8 @@ struct HttpServer::HttpServerContext {
     HttpServerContext(TcpConnection* conn) : ctx(conn) {}
 };
 
-HttpServer::HttpServer(EventLoop* loop, const InetAddress& listenAddr)
-    : server_(std::make_unique<TcpServer>(loop, listenAddr)) {
+HttpServer::HttpServer(EventLoop* loop, const InetAddress& listenAddr, const std::string& name, bool reusePort)
+    : server_(std::make_unique<TcpServer>(loop, listenAddr, name, reusePort)) {
     // 设置连接状态回调
     server_->setConnectionCallback([this](const TcpConnectionPtr& conn) { onConnection(conn); });
 
@@ -28,6 +28,9 @@ HttpServer::HttpServer(EventLoop* loop, const InetAddress& listenAddr)
 }
 
 void HttpServer::start() { server_->start(); }
+
+// 设置IO线程池的线程数量
+void HttpServer::setThreadNum(int numThreads) { server_->setThreadNum(numThreads); }
 
 void HttpServer::onConnection(const TcpConnectionPtr& conn) {
     if (conn->connected()) {
@@ -66,7 +69,9 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn, Buffer& buffer) {
             // 发送响应
             conn->send(responseStr);
 
-            if (!keepAlive) { conn->shutdown(); }
+            if (!keepAlive) {
+                conn->shutdown();
+            }
         } else if (result == HttpParser::ParseResult::kError) {
             // 解析失败，返回400错误
             HttpCtx->ctx.response().setStatusCode(400).setHeader("Connection", "close").setBody("Bad Request");
@@ -115,13 +120,21 @@ bool HttpServer::isKeepAlive(const HttpRequest& req) {
     // HTTP/1.0协议中，默认是close，除非指定为keep-alive
     if (req.version_ == "HTTP/1.1") {
         // 没有connection头，默认是Keep-Alive
-        if (it == req.headers_.end()) { return true; }
-        if (it->second == "close") { return false; }
+        if (it == req.headers_.end()) {
+            return true;
+        }
+        if (it->second == "close") {
+            return false;
+        }
         return true;
     } else {
         // 没有connection头，默认是close
-        if (it == req.headers_.end()) { return false; }
-        if (it->second == "keep-alive") { return true; }
+        if (it == req.headers_.end()) {
+            return false;
+        }
+        if (it->second == "keep-alive") {
+            return true;
+        }
         return false;
     }
 }

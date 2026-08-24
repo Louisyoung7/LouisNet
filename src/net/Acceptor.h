@@ -44,7 +44,7 @@ class Acceptor : public base::noncopyable {
     bool listening() const { return listening_; }
 
    private:
-    // 处理监听的socket上的读事件（新连接）
+    // 处理listening-socket上的读事件（新连接到来）
     void handleRead();
 };
 }  // namespace net
