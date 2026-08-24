@@ -42,6 +42,7 @@ TcpServer::~TcpServer() {
 // 让Acceptor实例开始监听新连接
 void TcpServer::start() {
     debug("[TcpServer] start() starting to listen on {}.\n\n", listenAddr_.toIpPort());
+    threadPool_->start();
     mainLoop_->runInLoop([this]() { acceptor_->listen(); });
 }
 
