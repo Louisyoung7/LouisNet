@@ -19,6 +19,9 @@ int main() {
     // 创建HttpServer
     HttpServer server(&loop, listenAddr);
 
+    // 设置IO线程数量
+    server.setThreadNum(4);
+
     // 注册路径对应的请求处理回调函数
     server.registerHandler("/", [](HttpContext& ctx) {
         auto& resp = ctx.response();

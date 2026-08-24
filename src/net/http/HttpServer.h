@@ -22,9 +22,13 @@ class HttpServer {
    public:
     using RequestHandler = std::function<void(HttpContext&)>;
 
-    HttpServer(net::reactor::EventLoop* loop, const net::InetAddress& listenAddr);
+    HttpServer(net::reactor::EventLoop* loop, const net::InetAddress& listenAddr,
+               const std::string& name = "HttpServer", bool reusePort = false);
+    ~HttpServer() = default;
 
     void start();
+
+    void setThreadNum(int numThreads);
 
     // 注册路径对应的请求处理回调函数
     void registerHandler(const std::string& path, RequestHandler cb) { handlers_[path] = std::move(cb); }
