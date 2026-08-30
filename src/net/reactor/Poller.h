@@ -1,7 +1,7 @@
 #pragma once
 
-#include <sys/epoll.h>  // for epoll API
-#include <unistd.h>     // for close
+#include <sys/epoll.h>
+#include <unistd.h>
 
 #include <cerrno>   // for errno
 #include <cstring>  // for strerror
@@ -14,20 +14,9 @@ namespace net::reactor {
 class Channel;
 class EventLoop;
 
-// Poller类
-// 1.封装epoll_wait等epoll相关调用
-// 2.管理所有注册在epoll中的fd:Channel的映射
-// 3.等待事件响应，填充活跃Channel列表activeChannels，包含所有实际发生的事件
-// 4.提供Channel的添加、修改、删除接口
-
 class Poller : public base::noncopyable {
     using ChannelList = std::vector<Channel*>;
     using ChannelMap = std::map<int, Channel*>;
-
-    EventLoop* ownerLoop_;                    ///< 所在的EventLoop
-    const int epollFd_;                       ///< epoll实例的文件描述符
-    ChannelMap fdMap_;                        ///< 存储所有fd:Channel的映射
-    std::vector<struct epoll_event> events_;  ///< 存储epoll_wait返回的事件
 
    public:
     // 构造析构
@@ -44,12 +33,15 @@ class Poller : public base::noncopyable {
     void removeChannel(Channel* channel);
 
    private:
-    // 封装epoll的添加、修改、删除事件
-    void addFd(int fd, int events);
-    void modFd(int fd, int events);
-    void delFd(int fd);
-
     // 填充EventLoop的活跃Channel列表
     void fillActiveChannels(int nfds, ChannelList& activeChannels) const;
+
+    // 更新被监听fd的事件类型
+    void update(int operation, Channel* channel);
+
+    EventLoop* ownerLoop_;  ///< 所在的EventLoop
+    const int epollFd_;     ///< epoll实例的文件描述符
+    ChannelMap fdMap_;      ///< 存储所有fd:Channel的映射
+    std::vector<struct epoll_event> events_;  ///< 存储epoll_wait返回的事件
 };
 }  // namespace net::reactor
