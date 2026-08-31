@@ -53,20 +53,31 @@ void Acceptor::listen() {
 void Acceptor::handleRead() {
     // 接受新连接
     InetAddress peerAddr;
-    int connfd = acceptSocket_->accept(peerAddr);
-    if (connfd > 0) {
-        // 调用新连接回调函数
-        if (newConnectionCallback_) {
-            newConnectionCallback_(connfd, peerAddr);
+    int connfd;
+    while (true) {
+        connfd = acceptSocket_->accept(peerAddr);
+        if (connfd > 0) {
+            // 调用新连接回调函数
+            if (newConnectionCallback_) {
+                newConnectionCallback_(connfd, peerAddr);
+            } else {
+                // 没有新连接回调函数，关闭连接
+                ::close(connfd);
+            }
         } else {
-            // 没有新连接回调函数，关闭连接
-            ::close(connfd);
-        }
-    } else {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            debug("[Acceptor] handleRead() no more connections\n\n");
-        } else {
-            error("[Acceptor] handleRead() accept() failed with errno = {}\n\n", strerror(errno));
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                // 正常：所有连接已处理完毕
+                debug("[Acceptor] handleRead() no more connections\n\n");
+                break;
+            } else {
+                error(
+                    "[Acceptor] handleRead() accept() failed with errno = {}\n\n", strerror(errno)
+                );
+                // 重新触发EPOLLIN，避免ET模式下丢失accept队列中剩余未处理的连接
+                acceptChannel_->disableRead();
+                acceptChannel_->enableRead();
+                break;
+            }
         }
     }
 }

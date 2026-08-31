@@ -15,19 +15,8 @@ class Channel;
 
 class InetAddress;
 
-// Acceptor类
-// 1.创建监听socket和绑定IP and Port
-// 2.处理新连接事件
-// 3.新连接到来时，调用回调函数处理新连接的fd和peerAddr
-
 class Acceptor : public base::noncopyable {
     using NewConnectionCallback = std::function<void(int sockfd, const InetAddress& peerAddr)>;
-
-    reactor::EventLoop* loop_;                         ///< 所属的EventLoop
-    bool listening_;                                   ///< 是否正在监听
-    std::unique_ptr<Socket> acceptSocket_;             ///< 监听socket
-    std::unique_ptr<reactor::Channel> acceptChannel_;  ///< 监听Channel
-    NewConnectionCallback newConnectionCallback_;      ///< 新连接回调函数
 
    public:
     // 构造析构
@@ -35,7 +24,9 @@ class Acceptor : public base::noncopyable {
     ~Acceptor();
 
     // 设置新连接回调函数
-    void setNewConnectionCallback(NewConnectionCallback callback) { newConnectionCallback_ = std::move(callback); }
+    void setNewConnectionCallback(NewConnectionCallback callback) {
+        newConnectionCallback_ = std::move(callback);
+    }
 
     // 开始监听
     void listen();
@@ -46,5 +37,11 @@ class Acceptor : public base::noncopyable {
    private:
     // 处理listening-socket上的读事件（新连接到来）
     void handleRead();
+
+    reactor::EventLoop* loop_;                         ///< 所属的EventLoop
+    bool listening_;                                   ///< 是否正在监听
+    std::unique_ptr<Socket> acceptSocket_;             ///< 监听socket
+    std::unique_ptr<reactor::Channel> acceptChannel_;  ///< 监听Channel
+    NewConnectionCallback newConnectionCallback_;      ///< 新连接回调函数
 };
 }  // namespace net

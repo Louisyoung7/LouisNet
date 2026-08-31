@@ -31,10 +31,7 @@ std::string operationToString(int operation) {
 Poller::Poller(EventLoop* loop)
     : ownerLoop_(loop), epollFd_(::epoll_create1(EPOLL_CLOEXEC)), events_(16) {
     if (epollFd_ == -1) {
-        critical(
-            "[Poller] Poller() failed to create epollfd: {}.\n\n",
-            strerror(errno)
-        );
+        critical("[Poller] Poller() failed to create epollfd: {}.\n\n", strerror(errno));
         // 无法创建epollfd，程序无法运行
         abort();
     }
@@ -43,8 +40,7 @@ Poller::~Poller() { ::close(epollFd_); }
 
 void Poller::poll(int timeoutMs, ChannelList& activeChannels) {
     // 获取活跃Channel的个数
-    int nfds =
-        ::epoll_wait(epollFd_, events_.data(), events_.size(), timeoutMs);
+    int nfds = ::epoll_wait(epollFd_, events_.data(), events_.size(), timeoutMs);
 
     //*  保存错误码，避免不小心调用系统调用，errno被覆盖
     int savedErrno = errno;
@@ -69,8 +65,7 @@ void Poller::updateChannel(Channel* channel) {
     // 获取fd
     int fd = channel->fd();
     //* 这里没有保存events临时变量，调用channel->events()获取最新的关心事件
-    if (channel->index() == Channel::kNew ||
-        channel->index() == Channel::kDeleted) {
+    if (channel->index() == Channel::kNew || channel->index() == Channel::kDeleted) {
         if (channel->index() == Channel::kNew) {
             assert(fdMap_.find(fd) == fdMap_.end());
             fdMap_[fd] = channel;
@@ -131,7 +126,7 @@ void Poller::fillActiveChannels(int nfds, ChannelList& activeChannels) const {
 
 void Poller::update(int operation, Channel* channel) {
     struct epoll_event event;
-    event.events = channel->events();
+    event.events = channel->events() | EPOLLET;
     event.data.ptr = channel;
     if (::epoll_ctl(epollFd_, operation, channel->fd(), &event) < 0) {
         error(

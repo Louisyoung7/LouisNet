@@ -39,9 +39,9 @@ class Poller : public base::noncopyable {
     // 更新被监听fd的事件类型
     void update(int operation, Channel* channel);
 
-    EventLoop* ownerLoop_;  ///< 所在的EventLoop
-    const int epollFd_;     ///< epoll实例的文件描述符
-    ChannelMap fdMap_;      ///< 存储所有fd:Channel的映射
+    EventLoop* ownerLoop_;                    ///< 所在的EventLoop
+    const int epollFd_;                       ///< epoll实例的文件描述符
+    ChannelMap fdMap_;                        ///< 存储所有fd:Channel的映射
     std::vector<struct epoll_event> events_;  ///< 存储epoll_wait返回的事件
 };
 }  // namespace net::reactor
