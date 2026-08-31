@@ -23,7 +23,6 @@ class TcpConnection;
 using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 
 class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public base::noncopyable {
-   private:
     using ConnectionCallback = std::function<void(const TcpConnectionPtr&)>;
     using MessageCallback = std::function<void(const TcpConnectionPtr&, base::Buffer&)>;
     using WriteCompleteCallback = std::function<void(const TcpConnectionPtr&)>;
@@ -34,8 +33,10 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
 
    public:
     // 构造析构
-    TcpConnection(reactor::EventLoop* loop, int sockfd, const InetAddress& localAddr, const InetAddress& peerAddr,
-                  const std::string& name = "TcpConnection");
+    TcpConnection(
+        reactor::EventLoop* loop, int sockfd, const InetAddress& localAddr,
+        const InetAddress& peerAddr, const std::string& name = "TcpConnection"
+    );
     ~TcpConnection();
 
     // 获取相关信息
@@ -52,7 +53,6 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
 
     // 发送数据
     void send(const std::string& message);
-    // 发送数据
     void send(const void* data, size_t len);
 
     // 关闭连接
@@ -64,7 +64,9 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection>, public
     // 设置回调函数
     void setConnectionCallback(ConnectionCallback cb) { connectionCallback_ = std::move(cb); }
     void setMessageCallback(MessageCallback cb) { messageCallback_ = std::move(cb); }
-    void setWriteCompleteCallback(WriteCompleteCallback cb) { writeCompleteCallback_ = std::move(cb); }
+    void setWriteCompleteCallback(WriteCompleteCallback cb) {
+        writeCompleteCallback_ = std::move(cb);
+    }
     void setCloseCallback(CloseCallback cb) { closeCallback_ = std::move(cb); }
 
     // 连接建立

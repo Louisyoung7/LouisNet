@@ -12,8 +12,24 @@
 
 using namespace net::reactor;
 
+namespace {
+std::string operationToString(int operation) {
+    switch (operation) {
+        case EPOLL_CTL_ADD:
+            return "ADD";
+        case EPOLL_CTL_MOD:
+            return "MOD";
+        case EPOLL_CTL_DEL:
+            return "DEL";
+        default:
+            return "unknown operation";
+    }
+}
+}  // namespace
+
 // 构造析构
-Poller::Poller(EventLoop* loop) : ownerLoop_(loop), epollFd_(::epoll_create1(EPOLL_CLOEXEC)), events_(16) {
+Poller::Poller(EventLoop* loop)
+    : ownerLoop_(loop), epollFd_(::epoll_create1(EPOLL_CLOEXEC)), events_(16) {
     if (epollFd_ == -1) {
         critical("[Poller] Poller() failed to create epollfd: {}.\n\n", strerror(errno));
         // 无法创建epollfd，程序无法运行
@@ -22,7 +38,6 @@ Poller::Poller(EventLoop* loop) : ownerLoop_(loop), epollFd_(::epoll_create1(EPO
 }
 Poller::~Poller() { ::close(epollFd_); }
 
-// 调用epoll_wait，等待事件响应，填充活跃Channel列表activeChannels
 void Poller::poll(int timeoutMs, ChannelList& activeChannels) {
     // 获取活跃Channel的个数
     int nfds = ::epoll_wait(epollFd_, events_.data(), events_.size(), timeoutMs);
@@ -35,7 +50,9 @@ void Poller::poll(int timeoutMs, ChannelList& activeChannels) {
         fillActiveChannels(nfds, activeChannels);
 
         //* 如果活跃事件数量接近events_的大小，动态扩展events_向量
-        if (static_cast<size_t>(nfds) == events_.size()) { events_.resize(events_.size() * 2); }
+        if (static_cast<size_t>(nfds) == events_.size()) {
+            events_.resize(events_.size() * 2);
+        }
     } else if (nfds == 0) {
         debug("[Poller] poll() timed out.\n\n");
     } else {
@@ -44,114 +61,78 @@ void Poller::poll(int timeoutMs, ChannelList& activeChannels) {
     }
 }
 
-// 更新Channel
 void Poller::updateChannel(Channel* channel) {
     // 获取fd
     int fd = channel->fd();
     //* 这里没有保存events临时变量，调用channel->events()获取最新的关心事件
-    // 新的Channel，添加到epoll和fdMap中
-    if (channel->index() == Channel::kNew) {
-        // 断言Channel在map中原本不存在
-        assert(fdMap_.find(fd) == fdMap_.end());
-        // 添加到map中
-        fdMap_[fd] = channel;
-        // 添加到epoll中
-        addFd(fd, channel->events());
-        // 更新channel状态
+    if (channel->index() == Channel::kNew || channel->index() == Channel::kDeleted) {
+        if (channel->index() == Channel::kNew) {
+            assert(fdMap_.find(fd) == fdMap_.end());
+            fdMap_[fd] = channel;
+        } else {
+            assert(fdMap_.find(fd) != fdMap_.end());
+            assert(fdMap_[fd] == channel);
+        }
+
+        update(EPOLL_CTL_ADD, channel);
         channel->setIndex(Channel::kAdded);
-    }
-    // 已经存在的Channel，更新事件
-    else {
-        // 断言channel已经在map中
+    } else {
         assert(fdMap_.find(fd) != fdMap_.end());
         assert(fdMap_[fd] == channel);
+        assert(channel->index() == Channel::kAdded);
 
         //* 没有关注事件，移除监听，减少资源消耗
         if (channel->events() == Channel::kNoneEvent) {
             //* 只在epoll中移除，在map中仍存在
-            delFd(fd);
-            // 更新channel状态
+            update(EPOLL_CTL_DEL, channel);
             channel->setIndex(Channel::kDeleted);
-        }
-        // 有关注事件，更新epoll事件
-        else {
-            if (channel->index() == Channel::kDeleted) {
-                addFd(fd, channel->events());
-            } else {
-                modFd(fd, channel->events());
-            }
-            channel->setIndex(Channel::kAdded);
+        } else {
+            update(EPOLL_CTL_MOD, channel);
         }
     }
 }
 
-// 移除Channel
 void Poller::removeChannel(Channel* channel) {
     // 获取fd
     int fd = channel->fd();
-    // 如果channel不在map中，直接返回
-    if (fdMap_.find(fd) == fdMap_.end()) {
-        channel->setIndex(Channel::kNew);
-        return;
-    }
-
+    assert(fdMap_.find(fd) != fdMap_.end());
     assert(fdMap_[fd] == channel);
-
-    // 确保取消关注所有事件
-    if (!channel->isNoneEvent()) { channel->disableAll(); }
     assert(channel->isNoneEvent());
+    int index = channel->index();
+    assert(index == Channel::kDeleted || index == Channel::kAdded);
 
-    // 从epoll中取消注册fd
-    if (channel->index() == Channel::kAdded) { delFd(fd); }
     // 从map中删除
     fdMap_.erase(fd);
-    // 更新channel状态
+
+    // 从epoll中取消注册fd
+    if (index == Channel::kAdded) {
+        update(EPOLL_CTL_DEL, channel);
+    }
+
     channel->setIndex(Channel::kNew);
 }
 
-void Poller::addFd(int fd, int events) {
-    struct epoll_event event;
-    event.events = events;
-    event.data.fd = fd;
-    if (::epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &event) < 0) {
-        error("[Poller] addFd() failed to add fd {} to epollfd {} with errno: {}.\n\n", fd, epollFd_, strerror(errno));
-    }
-}
-
-void Poller::modFd(int fd, int events) {
-    struct epoll_event event;
-    event.events = events;
-    event.data.fd = fd;
-    if (::epoll_ctl(epollFd_, EPOLL_CTL_MOD, fd, &event) < 0) {
-        error("[Poller] modFd() failed to mod fd {} to epollfd {} with errno: {}.\n\n", fd, epollFd_, strerror(errno));
-    }
-}
-
-void Poller::delFd(int fd) {
-    if (::epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, nullptr) < 0) {
-        error("[Poller] delFd() failed to del fd {} from epollfd {} with errno: {}.\n\n", fd, epollFd_,
-              strerror(errno));
-    }
-}
-
-// 填充EventLoop的活跃Channel列表
 void Poller::fillActiveChannels(int nfds, ChannelList& activeChannels) const {
     // 遍历epoll_wait返回的事件，填充EventLoop的活跃Channel列表
     for (int i = 0; i < nfds; ++i) {
-        // 获取fd和event
-        int fd = events_[i].data.fd;
-        int events = events_[i].events;
+        // 获取channel
+        auto channel = static_cast<Channel*>(events_[i].data.ptr);
+        // 设置revents
+        channel->setRevents(events_[i].events);
+        // 将Channel添加到活跃Channel列表中
+        activeChannels.push_back(channel);
+    }
+}
 
-        // 在fdMap_中查找对应fd的Channel
-        auto it = fdMap_.find(fd);
-        // 存在
-        if (it != fdMap_.end()) {
-            // 保存Channel
-            Channel* channel = it->second;
-            // 设置revents
-            channel->setRevents(events);
-            // 将Channel添加到活跃Channel列表中
-            activeChannels.push_back(channel);
-        }
+void Poller::update(int operation, Channel* channel) {
+    struct epoll_event event;
+    event.events = channel->events() | EPOLLET;
+    event.data.ptr = channel;
+    if (::epoll_ctl(epollFd_, operation, channel->fd(), &event) < 0) {
+        error(
+            "[Poller] update() failed to {} fd {} with errno: "
+            "{}.\n\n",
+            operationToString(operation), channel->fd(), strerror(errno)
+        );
     }
 }

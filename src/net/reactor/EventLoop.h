@@ -7,7 +7,6 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <thread>
 #include <vector>
 
 #include "base/noncopyable.h"
@@ -19,17 +18,11 @@ namespace net::reactor {
 class Channel;
 class Poller;
 
-// EventLoop类
-// 1.管理EventLoop内部的Poller实例
-// 2.管理活跃的Channel列表
-// 3.提供事件循环的启动和退出接口
-// 4.提供Channel的添加和移除接口
-
 class EventLoop : public base::noncopyable {
-   public:
     using Functor = std::function<void()>;
     using ChannelList = std::vector<Channel*>;
 
+   public:
     EventLoop();
     ~EventLoop();
 
@@ -68,18 +61,6 @@ class EventLoop : public base::noncopyable {
     void wakeup();
 
    private:
-    std::unique_ptr<Poller> poller_;                         // 指向EventLoop内部的Poller实例
-    ChannelList activeChannels_;                             // 活跃Channel列表
-    std::atomic_bool looping_{false};                        // 是否正在循环
-    std::atomic_bool quit_{false};                           // 是否停止事件循环
-    std::vector<Functor> tasks_;                             // 任务列表
-    std::mutex mutex_;                                       // 互斥锁，保证任务列表线程安全
-    std::thread::id tid_;                                    // 记录EventLoop所属线程ID
-    std::atomic_bool callingPendingFunctors_{false};         // 是否正在处理任务列表
-    int eventfd_;                                            // 事件通知描述符
-    std::unique_ptr<Channel> eventChannel_;                  // 事件通知Channel
-    std::unique_ptr<timer::TimerScheduler> timerScheduler_;  // 定时器调度器
-
     // 调用Poller的poll，填充活跃的Channel列表
     void poll(int timeoutMs, ChannelList& activeChannels);
 
@@ -88,5 +69,17 @@ class EventLoop : public base::noncopyable {
 
     // 处理事件通知Channel的读事件
     void handleRead();
+
+    std::unique_ptr<Poller> poller_;  // 指向EventLoop内部的Poller实例
+    ChannelList activeChannels_;      // 活跃Channel列表
+    bool looping_{false};             // 是否正在循环
+    std::atomic_bool quit_{false};    // 是否停止事件循环
+    std::vector<Functor> tasks_;      // 任务列表
+    std::mutex mutex_;     // 互斥锁，保证任务列表线程安全
+    static thread_local EventLoop* currentThread_;  // 当前线程的EventLoop实例
+    std::atomic_bool callingPendingFunctors_{false};  // 是否正在处理任务列表
+    int eventfd_;                                     // 事件通知描述符
+    std::unique_ptr<Channel> eventChannel_;           // 事件通知Channel
+    std::unique_ptr<timer::TimerScheduler> timerScheduler_;  // 定时器调度器
 };
 }  // namespace net::reactor

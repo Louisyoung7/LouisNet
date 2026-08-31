@@ -9,7 +9,13 @@ using namespace net::reactor;
 
 // 构造析构
 Channel::Channel(EventLoop* loop, int fd)
-    : loop_(loop), fd_(fd), events_(kNoneEvent), revents_(kNoneEvent), index_(kNew), tied_(false), isInLoop_(false) {}
+    : loop_(loop),
+      fd_(fd),
+      events_(kNoneEvent),
+      revents_(kNoneEvent),
+      index_(kNew),
+      tied_(false),
+      isInLoop_(false) {}
 Channel::~Channel() { assert(!isInLoop_); }
 
 // 处理事件
@@ -17,7 +23,9 @@ void Channel::handleEvents() {
     std::shared_ptr<void> guard;
     if (tied_) {
         guard = tie_.lock();
-        if (guard) { handler(); }
+        if (guard) {
+            handler();
+        }
     } else {
         handler();
     }
@@ -27,22 +35,30 @@ void Channel::handleEvents() {
 void Channel::handler() {
     // 处理关闭事件
     if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
-        if (closeCallback_) { closeCallback_(); }
+        if (closeCallback_) {
+            closeCallback_();
+        }
     }
 
     // 处理错误事件
     if (revents_ & EPOLLERR) {
-        if (errorCallback_) { errorCallback_(); }
+        if (errorCallback_) {
+            errorCallback_();
+        }
     }
 
     // 处理读取事件
     if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
-        if (readCallback_) { readCallback_(); }
+        if (readCallback_) {
+            readCallback_();
+        }
     }
 
     // 处理写入事件
     if (revents_ & EPOLLOUT) {
-        if (writeCallback_) { writeCallback_(); }
+        if (writeCallback_) {
+            writeCallback_();
+        }
     }
 }
 
