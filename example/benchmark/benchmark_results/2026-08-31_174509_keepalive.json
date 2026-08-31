@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-08-31_174509",
+  "scenario": "keepalive",
+  "optimization": "ET",
+  "git_commit": "595944dc69652a7c7b6211693723a18e1d5e4e8e",
+  "git_branch": "feature/epoll-et",
+  "url": "http://127.0.0.1:8080/",
+  "description": "高连接数低活跃度，ET vs LT 差异最明显的场景",
+  "tests": [
+  [2线程 / 5000连接 / 20s]
+    RPS: 347096.90 | 平均延迟: 7.21μs | P99: 9220.00μs | 超时: 0
+    {
+      "threads": 2,
+      "connections": 5000,
+      "duration": 20,
+      "rps": 347096.90,
+      "avg_latency_us": 7.21,
+      "p99_latency_us": 9220.00,
+      "timeout_count": 0,
+      "transfer_per_sec": "29.13MB"
+    },
+  [2线程 / 10000连接 / 20s]
+    RPS: 307705.04 | 平均延迟: 16.12μs | P99: 19690.00μs | 超时: 0
+    {
+      "threads": 2,
+      "connections": 10000,
+      "duration": 20,
+      "rps": 307705.04,
+      "avg_latency_us": 16.12,
+      "p99_latency_us": 19690.00,
+      "timeout_count": 0,
+      "transfer_per_sec": "25.82MB"
+    },
+  [2线程 / 20000连接 / 15s]
+    RPS: 255308.40 | 平均延迟: 34.57μs | P99: 40870.00μs | 超时: 0
+    {
+      "threads": 2,
+      "connections": 20000,
+      "duration": 15,
+      "rps": 255308.40,
+      "avg_latency_us": 34.57,
+      "p99_latency_us": 40870.00,
+      "timeout_count": 0,
+      "transfer_per_sec": "21.43MB"
+    }
+  ]
+}
