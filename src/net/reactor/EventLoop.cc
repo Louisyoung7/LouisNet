@@ -18,16 +18,20 @@ namespace {
 int createEventfd() {
     int eventfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (eventfd < 0) {
-        critical("%s-%s-%d createEventfd() failed to create eventfd: {}\n\n", __FILE__, __func__, __LINE__,
-                 strerror(errno));
+        critical(
+            "%s-%s-%d createEventfd() failed to create eventfd: {}\n\n",
+            __FILE__, __func__, __LINE__, strerror(errno)
+        );
     }
     return eventfd;
 }
 }  // namespace
 
+// 当前线程的EventLoop实例
+thread_local EventLoop* EventLoop::currentThread_ = nullptr;
+
 EventLoop::EventLoop()
     : poller_(std::make_unique<Poller>(this)),
-      tid_(std::this_thread::get_id()),
       eventfd_(createEventfd()),
       eventChannel_(std::make_unique<Channel>(this, eventfd_)),
       timerScheduler_(std::make_unique<TimerScheduler>(this)) {
@@ -35,11 +39,15 @@ EventLoop::EventLoop()
     eventChannel_->setReadCallback([this]() { handleRead(); });
     // 注册事件通知Channel到epoll，开启读事件监听
     eventChannel_->enableRead();
+    // 设置当前线程的EventLoop实例
+    currentThread_ = this;
 }
 EventLoop::~EventLoop() {
     eventChannel_->disableAll();
     eventChannel_->remove();
     ::close(eventfd_);
+    // 清空当前线程的EventLoop实例
+    currentThread_ = nullptr;
 }
 
 // 运行事件循环
@@ -52,7 +60,9 @@ void EventLoop::loop() {
         // 填充活跃的Channel列表
         poll(2000, activeChannels_);
         // 遍历活跃的Channel列表，处理事件
-        for (auto& channel : activeChannels_) { channel->handleEvents(); }
+        for (auto& channel : activeChannels_) {
+            channel->handleEvents();
+        }
         // 清空活跃的Channel列表
         activeChannels_.clear();
 
@@ -70,10 +80,14 @@ void EventLoop::quit() {
 }
 
 // 更新Channel
-void EventLoop::updateChannel(Channel* channel) { poller_->updateChannel(channel); }
+void EventLoop::updateChannel(Channel* channel) {
+    poller_->updateChannel(channel);
+}
 
 // 移除Channel
-void EventLoop::removeChannel(Channel* channel) { poller_->removeChannel(channel); }
+void EventLoop::removeChannel(Channel* channel) {
+    poller_->removeChannel(channel);
+}
 
 // 确保回调在loop线程执行
 void EventLoop::runInLoop(Functor cb) {
@@ -91,11 +105,13 @@ void EventLoop::queueInLoop(Functor cb) {
         tasks_.emplace_back(cb);
     }
 
-    if (!isInLoopThread() || callingPendingFunctors_) { wakeup(); }
+    if (!isInLoopThread() || callingPendingFunctors_) {
+        wakeup();
+    }
 }
 
 // 判断是否在loop线程
-bool EventLoop::isInLoopThread() { return tid_ == std::this_thread::get_id(); }
+bool EventLoop::isInLoopThread() { return currentThread_ == this; }
 
 // 在指定时间执行回调
 TimerId EventLoop::runAt(Timestamp time, TimerCallback cb) {
@@ -103,31 +119,43 @@ TimerId EventLoop::runAt(Timestamp time, TimerCallback cb) {
 }
 // 在指定延迟后执行回调
 TimerId EventLoop::runAfter(Duration delay, TimerCallback cb) {
-    return timerScheduler_->addTimer(Timestamp::now() + delay, Duration(0), std::move(cb));
+    return timerScheduler_->addTimer(
+        Timestamp::now() + delay, Duration(0), std::move(cb)
+    );
 }
 // 每隔指定时间间隔执行回调
 TimerId EventLoop::runEvery(Duration interval, TimerCallback cb) {
-    return timerScheduler_->addTimer(Timestamp::now() + interval, interval, std::move(cb));
+    return timerScheduler_->addTimer(
+        Timestamp::now() + interval, interval, std::move(cb)
+    );
 }
 // 取消指定定时器
-void EventLoop::cancel(TimerId timerId) { timerScheduler_->cancelTimer(timerId); }
+void EventLoop::cancel(TimerId timerId) {
+    timerScheduler_->cancelTimer(timerId);
+}
 
 // 唤醒loop线程
 void EventLoop::wakeup() {
     // 向注册到EventLoop的eventfd写入数据，唤醒对应EventLoop
     uint64_t one{1};
     ssize_t n = ::write(eventfd_, &one, sizeof(one));
-    if (n != sizeof(one)) { error("[EventLoop] wakeup() writes {} bytes instead of 8.\n\n", n); }
+    if (n != sizeof(one)) {
+        error("[EventLoop] wakeup() writes {} bytes instead of 8.\n\n", n);
+    }
 }
 
 void EventLoop::handleRead() {
     uint64_t one = 1;
     ssize_t n = ::read(eventfd_, &one, sizeof(one));
-    if (n != sizeof(one)) { error("[EventLoop] handleRead() reads {} bytes instead of 8.\n\n", n); }
+    if (n != sizeof(one)) {
+        error("[EventLoop] handleRead() reads {} bytes instead of 8.\n\n", n);
+    }
 }
 
 // 调用Poller的poll
-void EventLoop::poll(int timeoutMs, ChannelList& activeChannels) { poller_->poll(timeoutMs, activeChannels); }
+void EventLoop::poll(int timeoutMs, ChannelList& activeChannels) {
+    poller_->poll(timeoutMs, activeChannels);
+}
 
 // 执行待处理任务
 void EventLoop::doPendingFunctors() {
@@ -140,7 +168,9 @@ void EventLoop::doPendingFunctors() {
         tasks.swap(tasks_);
     }
 
-    for (const auto& task : tasks) { task(); }
+    for (const auto& task : tasks) {
+        task();
+    }
 
     callingPendingFunctors_ = false;
 }
