@@ -27,9 +27,13 @@ void Socket::listen() {
 // 接受连接
 int Socket::accept(InetAddress& peerAddr) {
     socklen_t addrLen = sizeof(struct sockaddr_in);
-    int connfd = ::accept4(sockfd_, const_cast<struct sockaddr*>(peerAddr.getSockaddr()), &addrLen,
-                           SOCK_NONBLOCK | SOCK_CLOEXEC);
-    if (connfd < 0) { error("[Socket] accept() failed, sockfd {}: {}.\n\n", sockfd_, strerror(errno)); }
+    int connfd = ::accept4(
+        sockfd_, const_cast<struct sockaddr*>(peerAddr.getSockaddr()), &addrLen,
+        SOCK_NONBLOCK | SOCK_CLOEXEC
+    );
+    if (connfd < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+        error("[Socket] accept() failed, sockfd {}: {}.\n\n", sockfd_, strerror(errno));
+    }
     return connfd;
 }
 
@@ -65,7 +69,9 @@ void Socket::setKeepAlive(bool on) {
 int Socket::getError() const {
     int optval;
     socklen_t optlen = sizeof(optval);
-    if (::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) { return errno; }
+    if (::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) {
+        return errno;
+    }
     return optval;
 }
 }  // namespace net
