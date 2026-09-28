@@ -17,3 +17,4 @@ CMakeFiles/
 cmake-build-*/
 *.cmake
 vcpkg_installed/
+.trae/
