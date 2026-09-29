@@ -12,17 +12,20 @@ namespace {
 // 按/r/n分割行
 std::pair<std::string_view, std::string_view> splitLine(std::string_view data) {
     size_t pos = data.find("\r\n");
-    if (pos == std::string_view::npos) { return {"", data}; }
+    if (pos == std::string_view::npos) return {"", data};
+
     return {data.substr(0, pos), data.substr(pos + 2)};
 }
 
 // 解析请求行: "GET /path HTTP/1.1"
 bool parseRequestLine(std::string_view line, HttpRequest& request) {
-    size_t pos1 = line.find(' ');
-    if (pos1 == std::string_view::npos) { return false; }
+    if (line.empty()) return false;
 
-    size_t pos2 = line.find(' ', pos1 + 1);
-    if (pos2 == std::string_view::npos) { return false; }
+    size_t pos1 = line.find(' ');  // 查找第一个空格
+    if (pos1 == std::string_view::npos) return false;
+
+    size_t pos2 = line.find(' ', pos1 + 1);  // 查找第二个空格
+    if (pos2 == std::string_view::npos) return false;
 
     request.method_ = line.substr(0, pos1);
     request.path_ = line.substr(pos1 + 1, pos2 - pos1 - 1);
@@ -33,17 +36,17 @@ bool parseRequestLine(std::string_view line, HttpRequest& request) {
 
 // 解析头部行: "Key: Value"
 bool parseHeaders(std::string_view line, HttpRequest& request) {
-    if (line.empty()) { return false; }
+    if (line.empty()) return false;
 
-    size_t pos = line.find(':');
-    if (pos == std::string_view::npos) { return false; }
-    std::string key(line.substr(0, pos));
+    size_t pos = line.find(':');  // 查找冒号
+    if (pos == std::string_view::npos) return false;
 
-    // 跳过冒号后面的空格
-    size_t valStart = pos + 1;
-    while (valStart < line.size() && line[valStart] == ' ') { valStart++; }
-    std::string val(line.substr(valStart));
-    while (!val.empty() && val.back() == ' ') { val.pop_back(); }
+    std::string key(line.substr(0, pos));  // 提取头部名
+
+    size_t valStart = pos + 1;                                           // 跳过冒号后面的空格
+    while (valStart < line.size() && line[valStart] == ' ') valStart++;  // 跳过头部值前面的空格
+    std::string val(line.substr(valStart));                              // 提取头部值
+    while (!val.empty() && val.back() == ' ') val.pop_back();            // 跳过头部值后面的空格
 
     // 头部名转小写
     std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -57,14 +60,21 @@ bool parseHeaders(std::string_view line, HttpRequest& request) {
 HttpParser::ParseResult HttpParser::parseRequest(Buffer& buffer, HttpRequest& outRequest) {
     size_t parsed = 0;
     auto result = parseCString(buffer.peek(), buffer.readableBytes(), outRequest, parsed);
+    if (result == ParseResult::kError) {
+        // 出错时丢弃缓冲区全部数据并重置解析器，避免无效数据残留被反复解析
+        buffer.consumeAll();
+        reset();
+        return result;
+    }
     // 更新已解析字节数
     buffer.consume(parsed);
     return result;
 }
 
 // 解析HTTP请求
-HttpParser::ParseResult HttpParser::parseCString(const char* data, size_t len, HttpRequest& outRequest,
-                                                 size_t& parsed) {
+HttpParser::ParseResult HttpParser::parseCString(
+    const char* data, size_t len, HttpRequest& outRequest, size_t& parsed
+) {
     std::string_view sv(data, len);
     std::string_view cur = sv;
     ParseResult result = ParseResult::kNeedMore;
@@ -75,7 +85,8 @@ HttpParser::ParseResult HttpParser::parseCString(const char* data, size_t len, H
             auto [line, rest] = splitLine(cur);
 
             // 需要更多数据解析请求行
-            if (line.empty() && rest == cur) { break; }
+            if (line.empty() && rest == cur) break;
+
             // 解析请求行
             if (!parseRequestLine(line, outRequest)) {
                 result = ParseResult::kError;
@@ -96,7 +107,8 @@ HttpParser::ParseResult HttpParser::parseCString(const char* data, size_t len, H
                     break;
                 } else {
                     // 检查是否需要解析请求体
-                    if (auto it = outRequest.headers_.find("content-length"); it != outRequest.headers_.end()) {
+                    if (auto it = outRequest.headers_.find("content-length");
+                        it != outRequest.headers_.end()) {
                         // 更新状态
                         state_ = State::kBody;
                         // 更新当前数据
