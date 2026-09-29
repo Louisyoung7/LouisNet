@@ -204,6 +204,23 @@ TEST(HttpParserSequence, PipelinedTwoRequests) {
     EXPECT_EQ(buf.readableBytes(), 0u);
 }
 
+// 测试管线化中第一个请求非法：kError 路径会清空整个缓冲区，
+// 紧随其后的第二个合法请求也被连带丢弃，无法继续解析（记录当前行为）
+TEST(HttpParserSequence, PipelinedFirstRequestInvalid) {
+    const std::string req2Raw = "GET /2 HTTP/1.1\r\n\r\n";
+    base::Buffer buf = makeBuffer("BADREQUEST\r\n\r\n" + req2Raw);
+    HttpRequest req;
+    HttpParser parser;
+
+    // 第一个请求行无空格 → kError
+    EXPECT_EQ(parser.parseRequest(buf, req), ParseResult::kError);
+    // 整个缓冲区被清空，第二个合法请求一并被丢弃
+    EXPECT_EQ(buf.readableBytes(), 0u);
+
+    // 缓冲区已空，第二个请求无法从同一缓冲区恢复解析
+    EXPECT_EQ(parser.parseRequest(buf, req), ParseResult::kNeedMore);
+}
+
 // ======================== 生命周期类 ========================
 
 // 测试无 body 请求解析成功后不复位：状态停留在 kHeaders，
