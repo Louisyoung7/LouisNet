@@ -24,7 +24,9 @@ HttpServer::HttpServer(EventLoop* loop, const InetAddress& listenAddr)
     server_->setConnectionCallback([this](const TcpConnectionPtr& conn) { onConnection(conn); });
 
     // 设置消息接收回调
-    server_->setMessageCallback([this](const TcpConnectionPtr& conn, Buffer& buffer) { onMessage(conn, buffer); });
+    server_->setMessageCallback([this](const TcpConnectionPtr& conn, Buffer& buffer) {
+        onMessage(conn, buffer);
+    });
 }
 
 void HttpServer::start() { server_->start(); }
@@ -69,7 +71,10 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn, Buffer& buffer) {
             if (!keepAlive) { conn->shutdown(); }
         } else if (result == HttpParser::ParseResult::kError) {
             // 解析失败，返回400错误
-            HttpCtx->ctx.response().setStatusCode(400).setHeader("Connection", "close").setBody("Bad Request");
+            HttpCtx->ctx.response()
+                .setStatusCode(400)
+                .setHeader("Connection", "close")
+                .setBody("Bad Request");
 
             warn("[HttpServer] onMessage() connection {} error: {}.\n\n", conn->name(), strerror(errno));
 
@@ -83,6 +88,9 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn, Buffer& buffer) {
             conn->send(responseStr);
 
             conn->shutdown();
+        } else if (result == HttpParser::ParseResult::kNeedMore) {
+            // 需要更多数据解析，直接返回
+            break;
         }
     }
 }
