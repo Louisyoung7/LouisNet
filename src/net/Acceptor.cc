@@ -22,12 +22,13 @@ Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenAddr, bool reusePor
       listening_(false),
       acceptSocket_(std::make_unique<Socket>(sockets::createNonblockingSocket())),
       acceptChannel_(std::make_unique<Channel>(loop, acceptSocket_->fd())) {
-    // 绑定IP and Port
-    acceptSocket_->bindAddress(listenAddr);
     // 设置复用地址和端口，设置Nagle算法
     acceptSocket_->setReuseAddr(true);
     acceptSocket_->setReusePort(reusePort);
     acceptSocket_->setTcpNoDelay(true);
+    
+    // 绑定IP and Port
+    acceptSocket_->bindAddress(listenAddr);
 
     // 设置Channel的读回调，处理新连接
     acceptChannel_->setReadCallback([this]() { handleRead(); });
