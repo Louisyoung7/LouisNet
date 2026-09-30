@@ -80,7 +80,8 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn, Buffer& buffer) {
             HttpCtx->ctx.response()
                 .setStatusCode(400)
                 .setHeader("Connection", "close")
-                .setBody("Bad Request");
+                .setBody("Bad Request")
+                .setHeader("Content-Length", "11");
 
             warn("[HttpServer] onMessage() connection {} error: {}.\n\n", conn->name(), strerror(errno));
 
@@ -112,7 +113,7 @@ void HttpServer::onRequest(HttpContext& ctx) {
             .setVersion(req.version_)
             .setStatusCode(404)
             .setBody("Not Found")
-            .setHeader("Content-Length", "10");
+            .setHeader("Content-Length", "9");
         warn("[HttpServer] onRequest() connection {} error: {}.\n\n", ctx.conn()->name(), strerror(errno));
         return;
     }
