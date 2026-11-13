@@ -18,7 +18,7 @@ class HttpResponse {
 
     // 重置响应对象
     void reset() {
-        version_.clear();
+        version_ = "HTTP/1.1";
         statusCode_ = 200;
         headers_.clear();
         body_.clear();
