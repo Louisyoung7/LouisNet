@@ -157,7 +157,7 @@ python3 benchmark/scripts/report.py [结果目录，默认 bench-results]
 ### 输出示例
 
 ```
-| 场景 | 参数 | head | mainsub | single | 主从/single |
+| 场景 | 参数 | et | mainsub | single | 主从/single |
 | baseline | c2000 | 544,324 | 575,088 | 235,788 | +143.9% |
 ```
 
@@ -205,7 +205,7 @@ benchmark/
 ├── docker/
 │   ├── Dockerfile.single        # 单 Reactor 镜像
 │   ├── Dockerfile.mainsub       # 主从 Reactor 镜像
-│   ├── Dockerfile.head          # 当前分支镜像
+│   ├── Dockerfile.et            # 当前分支镜像（ET 模式）
 │   ├── build_all.sh             # 按分支自动建 worktree 并构建镜像
 │   └── run_all.sh               # 三版本顺序压测
 ├── results/                     # 历史压测结果（宿主机 bench-results/ 为新结果）
