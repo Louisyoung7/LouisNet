@@ -34,6 +34,7 @@ if curl -sf --connect-timeout 2 -o /dev/null "${HOST}:${PORT}/big" 2>/dev/null; 
         "4 500 15"
     )
 
+    FIRST=true
     for bench in "${BENCHMARKS_BIG[@]}"; do
         read -r threads connections duration <<< "$bench"
         JSON_FRAG=$(run_test "$threads" "$connections" "$duration")
@@ -52,11 +53,12 @@ fi
 
 # ---- 场景 B: 高管道深度 = 大包效果 ----
 echo -e "\n${YELLOW}[场景B] HTTP Pipeline 深度测试${NC}"
-echo -e "  ${YELLOW}说明: wrk --pipeline 参数模拟一次性发送多个请求，等效于大包传输${NC}"
+echo -e "  ${YELLOW}说明: 通过 pipeline.lua 模拟一次性发送多个请求，等效于大包传输${NC}"
 
 PIPELINE_DEPTHS=(1 10 50 100)
+FIRST=true
 for depth in "${PIPELINE_DEPTHS[@]}"; do
-    JSON_FRAG=$(run_test "2" "100" "15" "--pipeline" "$depth")
+    JSON_FRAG=$(run_test "2" "100" "15" "$depth")
     if [ "$FIRST" = true ]; then
         FIRST=false
         echo -n "$JSON_FRAG" >> "$JSON_FILE"
