@@ -1,12 +1,8 @@
 #!/bin/bash
 # build_all.sh - 按分支名按需创建 worktree 并构建三个压测镜像
 # 用法:  bash docker/build_all.sh
-# 依赖:  本地存在 http / bench/single-reactor / bench/main-sub-reactor 三个分支
-#        克隆仓库后通常只有 main，需先:
-#          git fetch origin
-#          git checkout -b http origin/http
-#          git checkout -b bench/single-reactor origin/bench/single-reactor
-#          git checkout -b bench/main-sub-reactor origin/bench/main-sub-reactor
+# 依赖: 三个版本分支 http / bench/single-reactor / bench/main-sub-reactor
+#        本地缺失时会自动从 origin 建立跟踪分支（克隆仓库后可直接运行）
 # ==============================================
 set -uo pipefail
 
@@ -14,16 +10,25 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 WT="${BENCH_WORKTREE_DIR:-.worktrees}"
 
+ensure_branch() {  # $1=分支名：本地没有则从 origin 建立跟踪分支
+    local branch="$1"
+    git show-ref --verify --quiet "refs/heads/$branch" && return 0
+    if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+        echo "[$branch] 本地缺失，从 origin/$branch 建立跟踪分支"
+        git branch --track "$branch" "origin/$branch"
+    else
+        echo "错误: 本地和远端都没有分支 $branch" >&2
+        return 1
+    fi
+}
+
 ensure_worktree() {  # $1=子目录名 $2=分支名
     local dir="$WT/$1" branch="$2"
     if [ -e "$dir/.git" ]; then
         echo "[$1] worktree 已存在: $dir"
         return 0
     fi
-    if ! git show-ref --verify --quiet "refs/heads/$branch"; then
-        echo "[$1] 错误: 本地缺少分支 $branch" >&2
-        return 1
-    fi
+    ensure_branch "$branch" || return 1
     mkdir -p "$WT"
     echo "[$1] 从分支 $branch 创建 worktree: $dir"
     git worktree add "$dir" "$branch"
