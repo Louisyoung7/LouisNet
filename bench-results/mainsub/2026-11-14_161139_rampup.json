@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-11-14_161139",
+  "scenario": "rampup",
+  "optimization": "mainsub",
+  "git_commit": "unknown",
+  "git_branch": "unknown",
+  "url": "http://127.0.0.1:8080/",
+  "description": "固定线程数，逐步增加连接数，观察 RPS 和 P99 延迟的拐点",
+  "tests": [
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 482802.75,
+      "avg_latency_us": 109.89,
+      "p99_latency_us": 222.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "40.52MB"
+    },
+    {
+      "threads": 2,
+      "connections": 500,
+      "duration": 15,
+      "rps": 483109.11,
+      "avg_latency_us": 527.22,
+      "p99_latency_us": 1050.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "40.54MB"
+    },
+    {
+      "threads": 2,
+      "connections": 1000,
+      "duration": 15,
+      "rps": 473554.91,
+      "avg_latency_us": 1.07,
+      "p99_latency_us": 2100.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "39.74MB"
+    },
+    {
+      "threads": 2,
+      "connections": 2000,
+      "duration": 15,
+      "rps": 462418.25,
+      "avg_latency_us": 2.17,
+      "p99_latency_us": 3890.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "38.81MB"
+    },
+    {
+      "threads": 2,
+      "connections": 5000,
+      "duration": 15,
+      "rps": 358471.49,
+      "avg_latency_us": 7.05,
+      "p99_latency_us": 9250.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "30.08MB"
+    },
+    {
+      "threads": 2,
+      "connections": 10000,
+      "duration": 15,
+      "rps": 326503.44,
+      "avg_latency_us": 15.52,
+      "p99_latency_us": 20280.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "27.40MB"
+    },
+    {
+      "threads": 2,
+      "connections": 20000,
+      "duration": 15,
+      "rps": 236216.1,
+      "avg_latency_us": 37.79,
+      "p99_latency_us": 42880.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "19.82MB"
+    },
+    {
+      "threads": 2,
+      "connections": 50000,
+      "duration": 15,
+      "rps": 1853.93,
+      "avg_latency_us": 47.91,
+      "p99_latency_us": 71990.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "159.32KB"
+    }
+  ]
+}

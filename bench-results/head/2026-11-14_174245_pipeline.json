@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-11-14_174245",
+  "scenario": "pipeline",
+  "optimization": "head",
+  "git_commit": "unknown",
+  "git_branch": "unknown",
+  "url": "http://127.0.0.1:8080/",
+  "description": "不同 pipeline 深度下观察延迟和吞吐变化",
+  "tests": [
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 471077.19,
+      "avg_latency_us": 119.01,
+      "p99_latency_us": 219.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "39.53MB"
+    },
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 900790.12,
+      "avg_latency_us": 315.37,
+      "p99_latency_us": 595.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "75.60MB"
+    },
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 916974.9,
+      "avg_latency_us": 617.21,
+      "p99_latency_us": 1130.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "76.96MB"
+    },
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 960275.77,
+      "avg_latency_us": 1.12,
+      "p99_latency_us": 2150.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "80.59MB"
+    },
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 964822.85,
+      "avg_latency_us": 2.67,
+      "p99_latency_us": 0.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "80.97MB"
+    },
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 1009888.17,
+      "avg_latency_us": 5.01,
+      "p99_latency_us": 0.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "84.75MB"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-11-14_160457",
+  "scenario": "keepalive",
+  "optimization": "single",
+  "git_commit": "unknown",
+  "git_branch": "unknown",
+  "url": "http://127.0.0.1:8080/",
+  "description": "高连接数低活跃度，ET vs LT 差异最明显的场景",
+  "tests": [
+    {
+      "threads": 2,
+      "connections": 5000,
+      "duration": 20,
+      "rps": 201796.68,
+      "avg_latency_us": 24.62,
+      "p99_latency_us": 26940.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "16.94MB"
+    },
+    {
+      "threads": 2,
+      "connections": 10000,
+      "duration": 20,
+      "rps": 188964.15,
+      "avg_latency_us": 52.55,
+      "p99_latency_us": 55900.0,
+      "timeout_count": 23,
+      "transfer_per_sec": "15.86MB"
+    },
+    {
+      "threads": 2,
+      "connections": 20000,
+      "duration": 15,
+      "rps": 165619.72,
+      "avg_latency_us": 107.08,
+      "p99_latency_us": 116070.0,
+      "timeout_count": 101,
+      "transfer_per_sec": "13.90MB"
+    }
+  ]
+}

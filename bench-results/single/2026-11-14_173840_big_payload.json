@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-11-14_173840",
+  "scenario": "big_payload",
+  "optimization": "single",
+  "git_commit": "unknown",
+  "git_branch": "unknown",
+  "url": "http://127.0.0.1:8080/",
+  "description": "测试大消息体下的吞吐能力",
+  "tests": [
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 275931.89,
+      "avg_latency_us": 359.54,
+      "p99_latency_us": 681.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "23.16MB"
+    },
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 387475.91,
+      "avg_latency_us": 1.49,
+      "p99_latency_us": 2750.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "32.52MB"
+    },
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 382839.14,
+      "avg_latency_us": 6.72,
+      "p99_latency_us": 13820.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "32.13MB"
+    },
+    {
+      "threads": 2,
+      "connections": 100,
+      "duration": 15,
+      "rps": 392210.55,
+      "avg_latency_us": 12.94,
+      "p99_latency_us": 0.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "32.92MB"
+    }
+  ]
+}

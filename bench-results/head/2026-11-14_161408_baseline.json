@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-11-14_161408",
+  "scenario": "baseline",
+  "optimization": "head",
+  "git_commit": "unknown",
+  "git_branch": "unknown",
+  "url": "http://127.0.0.1:8080/",
+  "description": "标准 wrk 压测，覆盖低/中/高并发场景",
+  "tests": [
+    {
+      "threads": 1,
+      "connections": 100,
+      "duration": 10,
+      "rps": 272423.72,
+      "avg_latency_us": 185.01,
+      "p99_latency_us": 238.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "22.86MB"
+    },
+    {
+      "threads": 2,
+      "connections": 500,
+      "duration": 30,
+      "rps": 474145.31,
+      "avg_latency_us": 542.8,
+      "p99_latency_us": 1080.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "39.79MB"
+    },
+    {
+      "threads": 2,
+      "connections": 1000,
+      "duration": 10,
+      "rps": 468534.34,
+      "avg_latency_us": 1.08,
+      "p99_latency_us": 2160.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "39.32MB"
+    },
+    {
+      "threads": 4,
+      "connections": 2000,
+      "duration": 15,
+      "rps": 544323.91,
+      "avg_latency_us": 3.65,
+      "p99_latency_us": 3900.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "45.68MB"
+    },
+    {
+      "threads": 8,
+      "connections": 4000,
+      "duration": 15,
+      "rps": 487837.3,
+      "avg_latency_us": 8.17,
+      "p99_latency_us": 8690.0,
+      "timeout_count": 0,
+      "transfer_per_sec": "40.94MB"
+    }
+  ]
+}
