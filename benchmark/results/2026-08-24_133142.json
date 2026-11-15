@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-08-24_133142",
+  "optimization": "baseline-2026-8-24",
+  "git_commit": "5a74f5296029a0aee39a36a8957264347d7d1c93",
+  "git_branch": "feature/main-sub-reactor",
+  "url": "http://127.0.0.1:8080/",
+  "tests": [
+    {
+      "threads": 1,
+      "connections": 100,
+      "duration": 10,
+      "rps": 194019.08,
+      "avg_latency_us": 288.43,
+      "p99_latency_us": 714.00,
+      "timeout_count": 0,
+      "transfer_per_sec": "16.28MB"
+    }
+,
+    {
+      "threads": 2,
+      "connections": 500,
+      "duration": 60,
+      "rps": 175466.12,
+      "avg_latency_us": 2.72,
+      "p99_latency_us": 5660.00,
+      "timeout_count": 0,
+      "transfer_per_sec": "14.73MB"
+    }
+,
+    {
+      "threads": 2,
+      "connections": 1000,
+      "duration": 10,
+      "rps": 142510.14,
+      "avg_latency_us": 6.89,
+      "p99_latency_us": 21660.00,
+      "timeout_count": 0,
+      "transfer_per_sec": "11.96MB"
+    }
+,
+    {
+      "threads": 4,
+      "connections": 2000,
+      "duration": 15,
+      "rps": 136067.56,
+      "avg_latency_us": 18.03,
+      "p99_latency_us": 44800.00,
+      "timeout_count": 710,
+      "transfer_per_sec": "11.42MB"
+    }
+,
+    {
+      "threads": 8,
+      "connections": 4000,
+      "duration": 15,
+      "rps": 62502.12,
+      "avg_latency_us": 35.84,
+      "p99_latency_us": 85160.00,
+      "timeout_count": 367,
+      "transfer_per_sec": "5.25MB"
+    }
+
+  ]
+}
