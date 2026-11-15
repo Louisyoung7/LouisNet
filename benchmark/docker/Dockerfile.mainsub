@@ -1,0 +1,37 @@
+# syntax=docker/dockerfile:1
+# LouisNet 主从Reactor压测镜像（v1.3.0 + bugfix cherry-pick，Conan2构建）
+# 推荐用 bash benchmark/docker/build_all.sh 统一构建；手动构建（仓库根目录执行）:
+#   docker build -f benchmark/docker/Dockerfile.mainsub \
+#     --build-arg GIT_SHA=$(git -C .worktrees/main-sub-reactor rev-parse --short HEAD) \
+#     -t louisnet:bench-mainsub .worktrees/main-sub-reactor
+ARG GIT_SHA=unknown
+
+FROM ubuntu:24.04
+ARG GIT_SHA
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential cmake ninja-build git python3-pip curl iproute2 unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --break-system-packages -q conan
+
+# wrk 从源码构建
+RUN git clone --depth 1 https://github.com/wg/wrk.git /tmp/wrk \
+    && make -C /tmp/wrk -j"$(nproc)" \
+    && cp /tmp/wrk/wrk /usr/local/bin/
+
+WORKDIR /src
+COPY . .
+
+# Conan2 Release 构建
+RUN conan profile detect --force \
+    && conan install . -s build_type=Release --build=missing \
+    && cmake --preset conan-release \
+    && cmake --build --preset conan-release -j"$(nproc)"
+
+# 压测脚本直接取自本分支的 benchmark/scripts（三分支脚本已对齐）
+COPY benchmark/scripts/scenario_*.sh benchmark/scripts/benchmark_common.sh \
+     benchmark/scripts/pipeline.lua /opt/bench/
+RUN chmod +x /opt/bench/*.sh && echo "${GIT_SHA}" > /opt/bench/GIT_SHA
+
+WORKDIR /opt/bench
+CMD ["/bin/bash"]

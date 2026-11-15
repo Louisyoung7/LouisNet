@@ -31,7 +31,7 @@ PIPELINE_DEPTHS=(1 5 10 20 50 100)
 
 FIRST=true
 for depth in "${PIPELINE_DEPTHS[@]}"; do
-    JSON_FRAG=$(run_test "2" "100" "15" "--pipeline" "$depth")
+    JSON_FRAG=$(run_test "2" "100" "15" "$depth")
 
     if [ "$FIRST" = true ]; then
         FIRST=false

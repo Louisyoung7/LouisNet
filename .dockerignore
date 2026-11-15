@@ -1,0 +1,10 @@
+build/
+.cache/
+.git
+.worktrees/
+.trae/
+.vscode/
+CMakeUserPresets.json
+benchmark/results/
+bench-results/
+report.html

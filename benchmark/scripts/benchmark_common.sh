@@ -75,18 +75,30 @@ to_us() {
 }
 
 # ==================== 执行单次压测并返回 JSON 片段 ====================
-# 参数: 线程数 连接数 持续时间(秒) [额外wrk参数...]
+# 参数: 线程数 连接数 持续时间(秒) [pipeline深度] [额外wrk参数...]
+# pipeline深度 > 0 时自动附加 -s pipeline.lua（原生 wrk 无 --pipeline 选项），
+# 并通过 PIPE_DEPTH 环境变量把深度传入 lua
+# 可读摘要输出到 stderr，stdout 仅含纯 JSON，保证 $( ) 捕获结果可直接拼接
 run_test() {
     local threads="$1"
     local connections="$2"
     local duration="$3"
     shift 3
+    local pipeline="0"
+    if [ $# -gt 0 ] && [[ "$1" =~ ^[0-9]+$ ]]; then
+        pipeline="$1"
+        shift
+    fi
     local extra_args="$@"
 
-    echo -e "  [${threads}线程 / ${connections}连接 / ${duration}s]"
+    echo -e "  [${threads}线程 / ${connections}连接 / ${duration}s]" >&2
+    if [ "$pipeline" -gt 0 ]; then
+        echo -e "    pipeline深度: ${pipeline}" >&2
+        extra_args="-s ${SCRIPT_DIR}/pipeline.lua ${extra_args}"
+    fi
 
     local RESULT
-    RESULT=$(wrk --latency -d"${duration}" -t"${threads}" -c"${connections}" $extra_args "$URL" 2>&1) || true
+    RESULT=$(PIPE_DEPTH="$pipeline" wrk --latency -d"${duration}" -t"${threads}" -c"${connections}" $extra_args "$URL" 2>&1) || true
 
     # 解析结果
     RAW_AVG=$(echo "$RESULT" | awk '/^[[:space:]]+Latency[[:space:]]/ {print $2}')
@@ -102,14 +114,15 @@ run_test() {
     TIMEOUT="${TIMEOUT:-0}"
     RPS="${RPS:-0}"
 
-    echo "    RPS: $RPS | 平均延迟: ${AVG_LAT}μs | P99: ${P99_LAT}μs | 超时: $TIMEOUT"
+    echo "    RPS: $RPS | 平均延迟: ${AVG_LAT}μs | P99: ${P99_LAT}μs | 超时: $TIMEOUT" >&2
 
-    # 生成 JSON 片段
+    # 生成 JSON 片段（stdout）
     cat << EOF
     {
       "threads": ${threads},
       "connections": ${connections},
       "duration": ${duration},
+      "pipeline": ${pipeline},
       "rps": ${RPS},
       "avg_latency_us": ${AVG_LAT},
       "p99_latency_us": ${P99_LAT},
