@@ -47,16 +47,9 @@ build() {  # $1=版本名 $2=构建上下文目录
 ensure_worktree single-reactor   bench/single-reactor   || exit 1
 ensure_worktree main-sub-reactor bench/main-sub-reactor || exit 1
 
-# HEAD（http 分支）：若当前就在 http 上则直接用仓库根，否则单独开 worktree
-if [ "$(git rev-parse --abbrev-ref HEAD)" = "http" ]; then
-    HEAD_CTX="$ROOT"
-else
-    ensure_worktree head-http http || exit 1
-    HEAD_CTX="$WT/head-http"
-fi
-
 build single   "$WT/single-reactor"   || exit 1
 build mainsub  "$WT/main-sub-reactor" || exit 1
-build head     "$HEAD_CTX"            || exit 1
+# 第三个版本（ET）：直接构建当前分支的工作区
+build et       "$ROOT"                || exit 1
 
 echo "=== 三个镜像构建完成 ==="
