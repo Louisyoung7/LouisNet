@@ -1,12 +1,12 @@
 #!/bin/bash
 # build_all.sh - 按分支名按需创建 worktree 并构建三个压测镜像
-# 用法:  bash docker/build_all.sh
+# 用法:  bash benchmark/docker/build_all.sh
 # 依赖: 三个版本分支 http / bench/single-reactor / bench/main-sub-reactor
 #        本地缺失时会自动从 origin 建立跟踪分支（克隆仓库后可直接运行）
 # ==============================================
 set -uo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 WT="${BENCH_WORKTREE_DIR:-.worktrees}"
 
@@ -39,7 +39,7 @@ build() {  # $1=版本名 $2=构建上下文目录
     local sha
     sha="$(git -C "$ctx" rev-parse --short HEAD)"
     echo "=== 构建 louisnet:bench-$name (commit $sha) ==="
-    docker build -f "docker/Dockerfile.$name" --build-arg GIT_SHA="$sha" \
+    docker build -f "benchmark/docker/Dockerfile.$name" --build-arg GIT_SHA="$sha" \
         -t "louisnet:bench-$name" "$ctx"
 }
 
