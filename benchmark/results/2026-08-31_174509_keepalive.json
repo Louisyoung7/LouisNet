@@ -7,8 +7,6 @@
   "url": "http://127.0.0.1:8080/",
   "description": "高连接数低活跃度，ET vs LT 差异最明显的场景",
   "tests": [
-  [2线程 / 5000连接 / 20s]
-    RPS: 347096.90 | 平均延迟: 7.21μs | P99: 9220.00μs | 超时: 0
     {
       "threads": 2,
       "connections": 5000,
@@ -19,8 +17,6 @@
       "timeout_count": 0,
       "transfer_per_sec": "29.13MB"
     },
-  [2线程 / 10000连接 / 20s]
-    RPS: 307705.04 | 平均延迟: 16.12μs | P99: 19690.00μs | 超时: 0
     {
       "threads": 2,
       "connections": 10000,
@@ -31,8 +27,6 @@
       "timeout_count": 0,
       "transfer_per_sec": "25.82MB"
     },
-  [2线程 / 20000连接 / 15s]
-    RPS: 255308.40 | 平均延迟: 34.57μs | P99: 40870.00μs | 超时: 0
     {
       "threads": 2,
       "connections": 20000,

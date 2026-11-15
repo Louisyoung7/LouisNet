@@ -70,12 +70,17 @@ def main() -> int:
                  for v in versions if (v, scenario) in picked),
                 default=0,
             )
-            conns = [
-                cell(v, scenario, i).get("connections")
-                for v in versions for i in range(n) if cell(v, scenario, i)
-            ]
-            # 参数重复时（如 pipeline 旧数据未记录 depth）追加序号区分
-            dup = len(conns) != len(set(conns))
+            # 同一版本内参数重复时才追加序号（如 big_payload 不同响应体大小、
+            # pipeline 旧数据未记录 depth），跨版本的同名参数不算重复
+            ref_version = next((v for v in versions if cell(v, scenario, 0)), versions[0])
+            labels = []
+            for i in range(n):
+                t = cell(ref_version, scenario, i)
+                if t:
+                    labels.append(row_label(scenario, t, i, False))
+                else:
+                    labels.append(f"#{i + 1}")
+            dup = len(labels) != len(set(labels))
 
             for i in range(n):
                 ref = next((cell(v, scenario, i) for v in versions if cell(v, scenario, i)), None)
