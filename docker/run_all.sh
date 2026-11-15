@@ -1,14 +1,15 @@
 #!/bin/bash
 # run_all.sh - 三版本顺序压测，一键无人值守运行
+# 前置:  bash docker/build_all.sh 已构建好三个镜像
 # 用法:  bash docker/run_all.sh          # 前台看进度
 #        nohup bash docker/run_all.sh &  # 后台跑，回来看日志
-# 结果:  .worktrees/results/<version>/*.json
-# 日志:  .worktrees/results/run_all.log
+# 结果:  bench-results/<version>/*.json（仓库内，不随 .worktrees 删除丢失）
+# 日志:  bench-results/run_all.log
 # ==============================================
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RES="$ROOT/.worktrees/results"
+RES="$ROOT/bench-results"
 LOG="$RES/run_all.log"
 mkdir -p "$RES"
 

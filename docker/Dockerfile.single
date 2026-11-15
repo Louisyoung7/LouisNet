@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # LouisNet 单Reactor压测镜像（v1.2.0 + bugfix cherry-pick，FetchContent构建）
-# 构建（在仓库根目录执行）:
+# 推荐用 bash docker/build_all.sh 统一构建；手动构建（仓库根目录执行）:
 #   docker build -f docker/Dockerfile.single \
 #     --build-arg GIT_SHA=$(git -C .worktrees/single-reactor rev-parse --short HEAD) \
 #     -t louisnet:bench-single .worktrees/single-reactor
