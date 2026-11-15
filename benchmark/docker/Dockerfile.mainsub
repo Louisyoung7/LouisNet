@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
-# LouisNet HEAD（ET模式，http分支）压测镜像，Conan2构建
-# 推荐用 bash docker/build_all.sh 统一构建；手动构建（仓库根目录执行）:
-#   docker build -f docker/Dockerfile.head \
-#     --build-arg GIT_SHA=$(git rev-parse --short HEAD) \
-#     -t louisnet:bench-head .
+# LouisNet 主从Reactor压测镜像（v1.3.0 + bugfix cherry-pick，Conan2构建）
+# 推荐用 bash benchmark/docker/build_all.sh 统一构建；手动构建（仓库根目录执行）:
+#   docker build -f benchmark/docker/Dockerfile.mainsub \
+#     --build-arg GIT_SHA=$(git -C .worktrees/main-sub-reactor rev-parse --short HEAD) \
+#     -t louisnet:bench-mainsub .worktrees/main-sub-reactor
 ARG GIT_SHA=unknown
 
 FROM ubuntu:24.04
@@ -28,9 +28,9 @@ RUN conan profile detect --force \
     && cmake --preset conan-release \
     && cmake --build --preset conan-release -j"$(nproc)"
 
-# 压测脚本直接取自本分支的 example/benchmark（三分支脚本已对齐）
-COPY example/benchmark/scenario_*.sh example/benchmark/benchmark_common.sh \
-     example/benchmark/pipeline.lua /opt/bench/
+# 压测脚本直接取自本分支的 benchmark/scripts（三分支脚本已对齐）
+COPY benchmark/scripts/scenario_*.sh benchmark/scripts/benchmark_common.sh \
+     benchmark/scripts/pipeline.lua /opt/bench/
 RUN chmod +x /opt/bench/*.sh && echo "${GIT_SHA}" > /opt/bench/GIT_SHA
 
 WORKDIR /opt/bench
