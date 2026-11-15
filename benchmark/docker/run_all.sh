@@ -13,16 +13,16 @@ RES="$ROOT/bench-results"
 LOG="$RES/run_all.log"
 mkdir -p "$RES"
 
-IMAGES=(single mainsub head)
+IMAGES=(single mainsub et)
 declare -A IMG=(
     [single]=louisnet:bench-single
     [mainsub]=louisnet:bench-mainsub
-    [head]=louisnet:bench-head
+    [et]=louisnet:bench-et
 )
 declare -A BIN_DIR=(
     [single]=/src/build/release/benchmark
     [mainsub]=/src/build/Release/benchmark
-    [head]=/src/build/Release/benchmark
+    [et]=/src/build/Release/benchmark
 )
 SCENARIOS=(baseline keepalive big_payload pipeline rampup)
 
