@@ -58,11 +58,12 @@ LouisNet/
 ├── example/                 # 示例代码
 │   ├── echo/                # 回显服务器
 │   ├── http/                # HTTP服务器示例
-│   ├── timer/               # 定时器使用示例
-│   └── benchmark/           # 压测工具
-│       ├── main.cc          # 压测服务端
-│       ├── benchmark.sh     # wrk 压测脚本
-│       └── benchmark_results/
+│   └── timer/               # 定时器使用示例
+├── benchmark/               # 压测工具
+│   ├── main.cc              # 压测服务端
+│   ├── scripts/             # 场景脚本与结果分析
+│   ├── docker/              # 压测镜像与编排
+│   └── results/             # 历史压测结果
 ├── tests/                   # 测试
 │   ├── unit_tests/          # 单元测试
 │   └── inte_tests/          # 集成测试
@@ -102,9 +103,9 @@ cmake --preset release && cmake --build --preset release
 ./build/release/example/http/http_server
 
 # 基准测试（启动服务端）
-./build/release/example/benchmark/louis_net_benchmark
-# 另一个终端运行压测
-cd example/benchmark && ./benchmark.sh "主从Reactor"
+./build/release/benchmark/louis_net_benchmark
+# 另一个终端运行压测场景
+cd benchmark/scripts && ./scenario_baseline.sh "标记"
 ```
 
 ## 架构设计

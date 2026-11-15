@@ -1,14 +1,14 @@
 #!/bin/bash
 # run_all.sh - 三版本顺序压测，一键无人值守运行
-# 前置:  bash docker/build_all.sh 已构建好三个镜像
-# 用法:  bash docker/run_all.sh          # 前台看进度
-#        nohup bash docker/run_all.sh &  # 后台跑，回来看日志
+# 前置:  bash benchmark/docker/build_all.sh 已构建好三个镜像
+# 用法:  bash benchmark/docker/run_all.sh          # 前台看进度
+#        nohup bash benchmark/docker/run_all.sh &  # 后台跑，回来看日志
 # 结果:  bench-results/<version>/*.json（仓库内，不随 .worktrees 删除丢失）
 # 日志:  bench-results/run_all.log
 # ==============================================
 set -uo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 RES="$ROOT/bench-results"
 LOG="$RES/run_all.log"
 mkdir -p "$RES"
@@ -20,9 +20,9 @@ declare -A IMG=(
     [head]=louisnet:bench-head
 )
 declare -A BIN_DIR=(
-    [single]=/src/build/release/example/benchmark
-    [mainsub]=/src/build/Release/example/benchmark
-    [head]=/src/build/Release/example/benchmark
+    [single]=/src/build/release/benchmark
+    [mainsub]=/src/build/Release/benchmark
+    [head]=/src/build/Release/benchmark
 )
 SCENARIOS=(baseline keepalive big_payload pipeline rampup)
 

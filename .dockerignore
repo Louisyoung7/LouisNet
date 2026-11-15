@@ -5,5 +5,6 @@ build/
 .trae/
 .vscode/
 CMakeUserPresets.json
-example/benchmark/benchmark_results/
+benchmark/results/
 bench-results/
+report.html
