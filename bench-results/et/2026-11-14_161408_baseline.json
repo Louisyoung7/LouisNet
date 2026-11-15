@@ -1,7 +1,7 @@
 {
   "timestamp": "2026-11-14_161408",
   "scenario": "baseline",
-  "optimization": "head",
+  "optimization": "et",
   "git_commit": "unknown",
   "git_branch": "unknown",
   "url": "http://127.0.0.1:8080/",
