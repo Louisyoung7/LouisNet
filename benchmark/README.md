@@ -6,7 +6,7 @@
 
 ```bash
 # 1. 启动 HTTP 服务器
-./build/release/benchmark/louis_net_benchmark
+./build/Release/benchmark/louis_net_benchmark
 
 # 2. 运行指定场景压测（带优化标记）
 cd benchmark/scripts

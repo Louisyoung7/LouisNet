@@ -64,9 +64,11 @@ LouisNet/
 │   ├── scripts/             # 场景脚本与结果分析
 │   ├── docker/              # 压测镜像与编排
 │   └── results/             # 历史压测结果
-├── tests/                   # 测试
-│   ├── unit_tests/          # 单元测试
-│   └── inte_tests/          # 集成测试
+├── tests/                   # 单元测试（按模块分目录）
+│   ├── base/                # Buffer / ThreadPool
+│   ├── timer/               # Timestamp / Timer / TimerId
+│   ├── net/                 # Channel / InetAddress
+│   └── http/                # HttpParser / HttpResponse
 ├── CMakeLists.txt
 └── README.md
 ```
@@ -75,7 +77,7 @@ LouisNet/
 
 ### 依赖要求
 
-- CMake >= 3.21
+- CMake >= 3.28
 - C++17 编译器
 - spdlog（日志库，通过 Conan 管理）
 - Google Test（测试时需要）
@@ -87,23 +89,25 @@ git clone https://github.com/Louisyoung7/LouisNet.git
 cd LouisNet
 
 # Debug 模式（含测试）
-cmake --preset debug && cmake --build --preset debug
+conan install . -s build_type=Debug --build=missing
+cmake --preset conan-debug && cmake --build --preset conan-debug
 
 # Release 模式（生产，-O3 优化）
-cmake --preset release && cmake --build --preset release
+conan install . -s build_type=Release --build=missing
+cmake --preset conan-release && cmake --build --preset conan-release
 ```
 
 ### 运行示例
 
 ```bash
 # Echo 服务器
-./build/release/example/echo/echo_server
+./build/Release/example/echo/echo_server
 
 # HTTP 服务器
-./build/release/example/http/http_server
+./build/Release/example/http/http_server
 
 # 基准测试（启动服务端）
-./build/release/benchmark/louis_net_benchmark
+./build/Release/benchmark/louis_net_benchmark
 # 另一个终端运行压测场景
 cd benchmark/scripts && ./scenario_baseline.sh "标记"
 ```
