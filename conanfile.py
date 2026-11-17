@@ -4,7 +4,7 @@ from conan.tools.cmake import cmake_layout
 
 class LouisNetConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    exports_sources = "CMakeLists.txt", "src/*", "example/*", "tests/*"
+    exports_sources = "CMakeLists.txt", "src/*", "example/*", "tests/*", "benchmark/*"
     generators = "CMakeToolchain", "CMakeDeps"
 
     def requirements(self):

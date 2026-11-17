@@ -1,6 +1,7 @@
 # 查找Google Test (Conan2)
 find_package(GTest REQUIRED)
 
+# 单测按模块分目录存放（base/timer/net/http），统一编译进 tests 可执行文件
 file(GLOB_RECURSE TEST_SOURCES ${PROJECT_SOURCE_DIR}/tests/*.cc)
 
 # 添加可执行目标
